@@ -1,0 +1,391 @@
+# Documento de Requisitos do Produto (PRD)
+# Sistema de Estacionamento Rotativo Municipal
+
+## 1. Visão Geral do Produto
+
+### 1.1 Propósito
+O Sistema de Estacionamento Rotativo Municipal é uma solução digital que permite aos cidadãos adquirirem permissões de estacionamento por períodos específicos em zonas rotativas da cidade. O sistema facilita a fiscalização, otimiza a gestão dos estacionamentos públicos e proporciona maior transparência na utilização dos espaços.
+
+### 1.2 Escopo
+O sistema abrange:
+- Aplicativo móvel para cidadãos (com ou sem cadastro)
+- Portal web para cidadãos (com ou sem cadastro)
+- Aplicativo móvel para fiscais
+- Portal administrativo para gerentes e administradores
+- API de integração para serviços municipais
+- Sistema de gestão de pagamentos via gateways externos (Asaas, Mercado Pago, Stripe)
+- Sistema de notificação via WhatsApp para usuários cadastrados
+- Monitoramento e relatórios
+
+### 1.3 Objetivos
+- Proporcionar um método simples e eficiente para cidadãos adquirirem permissões de estacionamento, com ou sem necessidade de cadastro
+- Permitir a utilização rápida e sem burocracia do sistema para compras ocasionais
+- Oferecer benefícios adicionais (histórico, alertas, cadastro de veículos) para usuários cadastrados
+- Facilitar a fiscalização através de verificação digital de placas de veículos
+- Permitir a gestão dinâmica de valores de estacionamento
+- Fornecer dados analíticos para tomada de decisões sobre políticas de estacionamento
+- Reduzir a burocracia e o uso de papel em processos de estacionamento municipal
+- Aumentar a eficiência na arrecadação através de integrações com plataformas estabelecidas de pagamento
+
+## 2. Perfis de Usuários
+
+### 2.1 Cidadão
+**Descrição:** Pessoa que utiliza o estacionamento rotativo e precisa adquirir permissões.
+
+**Tipos:**
+- **Cidadão Não Cadastrado:** Utiliza o sistema sem registro, apenas informando dados do veículo
+- **Cidadão Cadastrado:** Possui registro no sistema com dados salvos e recursos adicionais
+
+**Necessidades (Não Cadastrado):**
+- Comprar permissões de estacionamento de forma rápida e sem burocracia
+- Consultar o tempo restante de uma permissão ativa
+- Obter comprovante de pagamento
+
+**Necessidades (Cadastrado):**
+- Todas as necessidades do não cadastrado
+- Cadastro simplificado com registro de múltiplos veículos
+- Receber alertas via WhatsApp sobre expiração de tempo
+- Visualizar histórico de compras
+- Reutilizar dados de compras anteriores
+
+### 2.2 Fiscal
+**Descrição:** Agente municipal responsável pela verificação do pagamento de estacionamento.
+
+**Necessidades:**
+- Verificar rapidamente a situação do estacionamento de um veículo
+- Registrar ocorrências de não conformidade
+- Emitir notificações de irregularidades
+- Trabalhar offline em zonas com pouca conectividade
+
+### 2.3 Gerente
+**Descrição:** Responsável pela gestão operacional do sistema de estacionamento.
+
+**Necessidades:**
+- Definir valores de estacionamento
+- Visualizar relatórios de utilização
+- Monitorar desempenho dos fiscais
+- Gerenciar zonas de estacionamento
+
+### 2.4 Administrador
+**Descrição:** Responsável técnico pelo sistema com acesso completo.
+
+**Necessidades:**
+- Gerenciar usuários do sistema
+- Configurar parâmetros técnicos
+- Acessar todas as funcionalidades
+- Visualizar relatórios completos
+- Realizar auditorias no sistema
+
+## 3. Requisitos Funcionais
+
+### 3.1 Requisitos para Cidadão
+
+#### 3.1.1 Cadastro e Autenticação
+- O sistema deve permitir o uso do aplicativo com ou sem cadastro (registro opcional)
+- Para cidadãos que optarem pelo cadastro:
+  - O cadastro deve incluir: nome completo, CPF, e-mail, telefone (WhatsApp), senha
+  - O sistema deve permitir autenticação via login/senha ou métodos alternativos (Google, Facebook)
+  - O sistema deve permitir recuperação de senha via e-mail ou SMS
+
+#### 3.1.2 Fluxo para Cidadãos Não Cadastrados
+- O sistema deve permitir a compra de permissão sem necessidade de registro
+- Usuários não cadastrados devem informar apenas:
+  - Placa do veículo
+  - Modelo do veículo
+  - Período de estacionamento desejado
+- O sistema deve gerar um código de consulta para verificação posterior
+- O sistema deve permitir consultar o tempo restante de estacionamento mediante informação da placa do veículo
+- O sistema não enviará alertas ou notificações para usuários não cadastrados
+
+#### 3.1.3 Gestão de Veículos (Exclusivo para Usuários Cadastrados)
+- O sistema deve permitir que o cidadão cadastrado adicione, edite e remova veículos
+- Ao adicionar um veículo, os seguintes dados são obrigatórios:
+  - Placa do veículo
+  - Modelo do veículo
+- O sistema deve permitir o cadastro de múltiplos veículos por usuário cadastrado
+- O sistema deve validar o formato da placa do veículo conforme padrão nacional
+- O sistema deve manter um histórico de veículos para facilitar futuras compras
+
+#### 3.1.4 Compra de Permissão de Estacionamento
+- O sistema deve permitir a seleção de períodos de estacionamento: 1, 2, 3, 4, 5, 6 ou 12 horas
+- O sistema deve mostrar o valor correspondente ao período selecionado
+- Para usuários cadastrados, o sistema deve permitir a seleção do veículo dentre os previamente cadastrados
+- O sistema deve integrar-se com soluções de pagamento como Asaas, Mercado Pago ou Stripe
+- O sistema deve oferecer múltiplas formas de pagamento (cartão de crédito, PIX, etc.)
+- O sistema deve gerar um comprovante digital após a confirmação do pagamento
+- Para usuários cadastrados, o sistema deve enviar notificações via WhatsApp quando a permissão estiver próxima do vencimento (30 minutos antes)
+
+#### 3.1.5 Histórico e Gestão (Exclusivo para Usuários Cadastrados)
+- O sistema deve exibir histórico de permissões adquiridas para usuários cadastrados
+- O sistema deve permitir a visualização de detalhes de cada permissão
+- O sistema deve permitir o download de comprovantes para fins de comprovação
+- O sistema deve permitir renovação rápida de permissões anteriores
+
+### 3.2 Requisitos para Fiscal
+
+#### 3.2.1 Autenticação e Acesso
+- O sistema deve permitir login do fiscal com credenciais específicas
+- O sistema deve validar permissões e níveis de acesso do fiscal
+- O sistema deve registrar todas as ações realizadas pelo fiscal
+
+#### 3.2.2 Verificação de Veículos
+- O sistema deve permitir a verificação de veículos por:
+  - Leitura de placa via câmera do dispositivo
+  - Inserção manual da placa
+- O sistema deve exibir as seguintes informações após a verificação:
+  - Status da permissão (ativa/inativa)
+  - Horário de início da permissão
+  - Horário de término da permissão
+  - Tempo restante da permissão
+  - Histórico de permissões anteriores do veículo
+- O sistema deve funcionar em modo offline com sincronização posterior
+
+#### 3.2.3 Registro de Infrações
+- O sistema deve permitir o registro de infrações para veículos sem permissão ativa
+- O sistema deve permitir captura de fotos como evidência
+- O sistema deve gerar automaticamente um código de autuação
+- O sistema deve registrar localização GPS do veículo no momento da autuação
+
+### 3.3 Requisitos para Gerente
+
+#### 3.3.1 Gestão de Valores
+- O sistema deve permitir a definição de valores para cada período de estacionamento (1h, 2h, 3h, 4h, 5h, 6h e 12h)
+- O sistema deve permitir a configuração de valores diferenciados por zonas da cidade
+- O sistema deve permitir a programação de alterações de valores para datas futuras
+- O sistema deve manter histórico de alterações de valores
+
+#### 3.3.2 Monitoramento Operacional
+- O sistema deve disponibilizar dashboard com indicadores em tempo real:
+  - Número de permissões ativas
+  - Valor arrecadado no dia/semana/mês
+  - Taxa de ocupação por zona
+  - Desempenho dos fiscais
+- O sistema deve permitir exportação de relatórios em diferentes formatos (PDF, Excel)
+
+### 3.4 Requisitos para Administrador
+
+#### 3.4.1 Gestão de Usuários
+- O sistema deve permitir a criação, edição e desativação de todos os tipos de usuários
+- O sistema deve permitir a definição de papéis e permissões personalizadas
+- O sistema deve manter log de todas as alterações em contas de usuário
+
+#### 3.4.2 Configurações do Sistema
+- O sistema deve permitir configuração de parâmetros técnicos
+- O sistema deve permitir backup e restauração de dados
+- O sistema deve permitir configuração de regras de negócio
+
+#### 3.4.3 Análise Avançada
+- O sistema deve fornecer gráficos detalhados de:
+  - Horários de pico de utilização
+  - Frequência de uso por zonas
+  - Padrões de utilização por dia da semana
+  - Receita por período e zona
+  - Comparativo de uso entre períodos diferentes
+- O sistema deve permitir a criação de relatórios personalizados
+- O sistema deve suportar exportação de dados para análise externa
+
+## 4. Requisitos Não Funcionais
+
+### 4.1 Requisitos de Usabilidade
+- A interface para cidadãos deve ser intuitiva e requerer no máximo 3 cliques para completar a compra de uma permissão
+- O aplicativo para fiscais deve ser otimizado para uso rápido em condições externas (luz solar, chuva)
+- O sistema deve ser acessível conforme diretrizes de acessibilidade digital
+
+### 4.2 Requisitos de Desempenho
+- O tempo de resposta para verificação de placa não deve exceder 2 segundos
+- O sistema deve suportar até 500 verificações simultâneas
+- O sistema deve processar pagamentos em menos de 5 segundos
+- O sistema deve sincronizar dados offline em até 1 minuto após reconexão
+
+### 4.3 Requisitos de Segurança
+- Todos os dados pessoais devem ser criptografados
+- O sistema deve estar em conformidade com a LGPD
+- Autenticação em dois fatores para perfis administrativos
+- Registro de todas as operações críticas em log de auditoria
+
+### 4.4 Requisitos de Confiabilidade
+- Disponibilidade de 99,9% do sistema
+- Backup automático diário dos dados
+- Plano de recuperação de desastres com tempo de recuperação máximo de 4 horas
+
+### 4.5 Requisitos de Compatibilidade
+- Aplicativo móvel compatível com Android 8.0+ e iOS 12.0+
+- Interface web responsiva para desktop, tablet e smartphone
+- Compatibilidade com os principais navegadores web (Chrome, Firefox, Safari, Edge)
+
+## 5. Fluxos de Usuário
+
+### 5.1 Fluxo de Compra de Permissão (Cidadão Não Cadastrado)
+1. Cidadão acessa o aplicativo/portal sem fazer login
+2. Seleciona a opção "Comprar Permissão"
+3. Insere a placa e modelo do veículo
+4. Escolhe a duração da permissão (1h, 2h, 3h, 4h, 5h, 6h ou 12h)
+5. Visualiza o valor total
+6. É redirecionado para gateway de pagamento (Asaas, Mercado Pago ou Stripe)
+7. Confirma o pagamento
+8. Recebe confirmação e comprovante digital com código de consulta
+
+### 5.2 Fluxo de Compra de Permissão (Cidadão Cadastrado)
+1. Cidadão faz login no aplicativo/portal
+2. Seleciona a opção "Comprar Permissão"
+3. Seleciona o veículo dentre os previamente cadastrados ou adiciona um novo
+4. Escolhe a duração da permissão (1h, 2h, 3h, 4h, 5h, 6h ou 12h)
+5. Visualiza o valor total
+6. É redirecionado para gateway de pagamento (Asaas, Mercado Pago ou Stripe)
+7. Confirma o pagamento
+8. Recebe confirmação e comprovante digital
+9. Sistema programa alertas via WhatsApp para 30 minutos antes do término
+
+### 5.3 Fluxo de Consulta de Tempo Restante (Cidadão Não Cadastrado)
+1. Cidadão acessa o aplicativo/portal
+2. Seleciona a opção "Consultar Tempo Restante"
+3. Insere a placa do veículo
+4. Sistema exibe o tempo restante da permissão ativa, se houver
+
+### 5.4 Fluxo de Verificação de Veículo (Fiscal)
+1. Fiscal faz login no aplicativo
+2. Seleciona a opção "Verificar Veículo"
+3. Captura a placa com a câmera ou insere manualmente
+4. Sistema processa e exibe o status do veículo
+5. Fiscal visualiza detalhes da permissão ou registra infração
+
+### 5.3 Fluxo de Alteração de Valores (Gerente)
+1. Gerente faz login no portal administrativo
+2. Acessa a seção "Gestão de Valores"
+3. Seleciona o período a ser alterado
+4. Insere o novo valor
+5. Define data de vigência
+6. Confirma a alteração
+7. Sistema registra a mudança e atualiza tabela de preços
+
+### 5.4 Fluxo de Criação de Usuário (Administrador)
+1. Administrador faz login no portal administrativo
+2. Acessa a seção "Gestão de Usuários"
+3. Seleciona "Adicionar Novo Usuário"
+4. Preenche dados do usuário
+5. Define o tipo de perfil (Cidadão, Fiscal, Gerente)
+6. Define permissões específicas
+7. Confirma a criação
+8. Sistema cria o usuário e envia credenciais por e-mail
+
+## 6. Integrações
+
+### 6.1 Integrações com Sistemas Municipais
+- Integração com cadastro municipal para validação de cidadãos
+- Integração com sistema de multas municipais
+- Integração com portal de transparência municipal
+
+### 6.2 Integrações com Gateways de Pagamento
+- Integração com Asaas para processamento de pagamentos
+- Integração com Mercado Pago como opção alternativa
+- Integração com Stripe para pagamentos internacionais
+- Suporte a pagamentos por cartão de crédito, débito e PIX
+- Webhook para confirmação assíncrona de pagamentos
+- Relatórios financeiros integrados
+
+### 6.3 Outras Integrações
+- API para consulta de dados por outros sistemas municipais
+- Integração com API do WhatsApp Business para envio de alertas aos usuários cadastrados
+- Integração com serviços de geolocalização
+- API pública para consulta de tempo restante mediante informação da placa
+
+## 7. Considerações Técnicas
+
+### 7.1 Arquitetura Proposta
+- Arquitetura em nuvem com microsserviços
+- Backend em linguagem segura e escalável (Java, Python ou .NET)
+- Frontend web em React ou Angular
+- Aplicativos móveis nativos ou em Flutter/React Native
+- Banco de dados relacional para transações e NoSQL para logs e análises
+
+### 7.2 Infraestrutura
+- Ambiente em nuvem com redundância geográfica
+- Balanceamento de carga para alta disponibilidade
+- CDN para entrega otimizada de conteúdo estático
+- Ambiente segregado para desenvolvimento, homologação e produção
+
+### 7.3 Segurança
+- WAF (Web Application Firewall) para proteção contra ataques
+- Certificados SSL/TLS para comunicação segura
+- Tokenização de dados sensíveis
+- Criptografia de dados em trânsito e em repouso
+
+## 8. Roadmap de Implementação
+
+### 8.1 Fase 1 - MVP (3 meses)
+- Compra de permissões sem necessidade de cadastro
+- Fluxo básico de compra de permissão através de Asaas como gateway principal
+- Consulta de tempo restante mediante informação da placa
+- Cadastro opcional de cidadãos e veículos
+- Verificação básica de veículos por fiscais
+- Dashboard simplificado para gerentes
+
+### 8.2 Fase 2 - Expansão (3 meses)
+- Integração com múltiplos métodos de pagamento (Mercado Pago e Stripe)
+- Implementação de alertas via WhatsApp para usuários cadastrados
+- Funcionalidades avançadas de fiscalização
+- Relatórios detalhados para gerentes
+- Gestão de zonas de estacionamento
+
+### 8.3 Fase 3 - Consolidação (3 meses)
+- Análise avançada de dados
+- Integrações com sistemas municipais
+- Funcionalidades de administração completas
+- Otimizações de desempenho
+- Implementação de estratégias para conversão de usuários não cadastrados para cadastrados
+
+## 9. Métricas de Sucesso
+
+### 9.1 Métricas de Negócio
+- Aumento na arrecadação em 20% no primeiro ano
+- Redução de 30% no tempo médio de fiscalização
+- 70% das transações realizadas pelo sistema digital
+- 40% dos cidadãos optando pelo cadastro no sistema
+- Taxa de conversão de usuários não cadastrados para cadastrados de 15%
+- Satisfação do usuário acima de 4.0/5.0
+- Redução de 25% nas reclamações sobre estacionamento público
+
+### 9.2 Métricas Técnicas
+- Tempo médio de resposta abaixo de 2 segundos
+- Taxa de erros em transações abaixo de 0,1%
+- Disponibilidade do sistema acima de 99,9%
+- Tempo médio de resolução de problemas técnicos menor que 2 horas
+
+## 10. Riscos e Mitigações
+
+### 10.1 Riscos Identificados
+- Resistência de usuários à adoção digital
+- Problemas de conectividade em algumas áreas da cidade
+- Integração com sistemas legados municipais
+- Segurança de dados sensíveis
+
+### 10.2 Estratégias de Mitigação
+- Campanha de conscientização e treinamento para cidadãos e fiscais
+- Implementação de modo offline robusto para fiscais
+- Equipe dedicada para integrações com sistemas legados
+- Auditorias de segurança periódicas e testes de penetração
+
+## 11. Anexos
+
+### 11.1 Tabela de Preços Inicial (Sugestão)
+| Duração | Valor (R$) |
+|---------|------------|
+| 1 hora  | 3,00       |
+| 2 horas | 5,50       |
+| 3 horas | 8,00       |
+| 4 horas | 10,00      |
+| 5 horas | 12,00      |
+| 6 horas | 13,50      |
+| 12 horas| 20,00      |
+
+### 11.2 Estrutura de Usuários e Permissões
+| Perfil             | Permissões Principais |
+|--------------------|------------------------|
+| Cidadão Não Cadastrado | Compra avulsa de permissões, consulta de tempo restante |
+| Cidadão Cadastrado | Cadastro de veículos, compra de permissões, histórico, alertas via WhatsApp |
+| Fiscal             | Verificação de veículos, registro de infrações |
+| Gerente            | Gestão de valores, relatórios operacionais |
+| Administrador      | Todas as permissões, gestão de usuários, configurações |
+
+### 11.3 Mockups das Telas Principais
+*Nota: Mockups serão desenvolvidos durante a fase de design do projeto*

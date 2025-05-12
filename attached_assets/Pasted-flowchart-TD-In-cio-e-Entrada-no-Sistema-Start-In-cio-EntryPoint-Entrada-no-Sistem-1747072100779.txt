@@ -1,0 +1,254 @@
+flowchart TD
+    %% Início e Entrada no Sistema
+    Start[Início] --> EntryPoint[Entrada no Sistema]
+    EntryPoint --> LoginCheck{Usuário possui\ncadastro?}
+
+    %% Fluxo para usuários não cadastrados
+    LoginCheck -->|Não| GuestMenu[Menu Principal\nNão Cadastrado]
+
+    GuestMenu --> G_BuyPermit[Comprar Permissão]
+    GuestMenu --> G_CheckTime[Consultar Tempo\nRestante]
+    GuestMenu --> G_Register[Cadastrar-se]
+
+    %% Fluxo de compra para não cadastrados
+    G_BuyPermit --> G_EnterPlate[Inserir Placa\ne Modelo]
+    G_EnterPlate --> G_SelectDuration[Selecionar Duração\n1h, 2h, 3h, 4h, 5h, 6h, 12h]
+    G_SelectDuration --> G_ShowPrice[Visualizar Valor\nTotal]
+    G_ShowPrice --> G_Payment[Escolher Forma\nde Pagamento]
+    G_Payment --> G_ProcessPayment[Processar Pagamento\nvia Gateway]
+    G_ProcessPayment --> PaymentResult{Pagamento\naprovado?}
+    PaymentResult -->|Sim| G_Success[Exibir Confirmação\ne Código de Consulta]
+    PaymentResult -->|Não| G_Failure[Exibir Erro\nde Pagamento]
+    G_Failure --> G_RetryPayment[Tentar\nNovamente?]
+    G_RetryPayment -->|Sim| G_Payment
+    G_RetryPayment -->|Não| GuestMenu
+    G_Success --> GuestMenu
+
+    %% Consulta de tempo para não cadastrados
+    G_CheckTime --> G_EnterPlateCheck[Inserir Placa\ndo Veículo]
+    G_EnterPlateCheck --> G_DisplayTime[Exibir Tempo\nRestante]
+    G_DisplayTime --> GuestMenu
+
+    %% Cadastro de novo usuário
+    G_Register --> RegisterForm[Formulário de Cadastro\nNome, CPF, Email,\nTelefone, Senha]
+    RegisterForm --> ValidateRegistration{Validação OK?}
+    ValidateRegistration -->|Não| RegisterForm
+    ValidateRegistration -->|Sim| ConfirmRegistration[Confirmar\nCadastro]
+    ConfirmRegistration --> UserLogin[Login]
+
+    %% Fluxo para usuários cadastrados
+    LoginCheck -->|Sim| UserLogin
+    UserLogin --> AuthMethod{Método de\nAutenticação}
+    AuthMethod -->|Login/Senha| EnterCredentials[Inserir Email\ne Senha]
+    AuthMethod -->|Google/Facebook| SocialLogin[Login Social]
+    EnterCredentials --> ValidateCredentials{Credenciais\nVálidas?}
+    ValidateCredentials -->|Não| EnterCredentials
+    ValidateCredentials -->|Sim| UserMenu[Menu Principal\nUsuário Cadastrado]
+    SocialLogin --> UserMenu
+
+    %% Menu de usuário cadastrado
+    UserMenu --> U_BuyPermit[Comprar Permissão]
+    UserMenu --> U_CheckTime[Consultar Tempo\nRestante]
+    UserMenu --> U_ManageVehicles[Gerenciar Veículos]
+    UserMenu --> U_ViewHistory[Visualizar Histórico]
+    UserMenu --> U_AccountSettings[Configurações\nda Conta]
+
+    %% Fluxo de compra para cadastrados
+    U_BuyPermit --> U_SelectVehicle[Selecionar Veículo\nCadastrado]
+    U_SelectVehicle --> U_AddNewVehicle{Adicionar novo\nveículo?}
+    U_AddNewVehicle -->|Sim| U_EnterNewVehicle[Inserir Dados\ndo Novo Veículo]
+    U_EnterNewVehicle --> U_SelectDuration
+    U_AddNewVehicle -->|Não| U_SelectDuration[Selecionar Duração\n1h, 2h, 3h, 4h, 5h, 6h, 12h]
+    U_SelectDuration --> U_ShowPrice[Visualizar Valor\nTotal]
+    U_ShowPrice --> U_Payment[Escolher Forma\nde Pagamento]
+    U_Payment --> U_ProcessPayment[Processar Pagamento\nvia Gateway]
+    U_ProcessPayment --> U_PaymentResult{Pagamento\naprovado?}
+    U_PaymentResult -->|Sim| U_Success[Exibir Confirmação\ne Programar Alertas]
+    U_PaymentResult -->|Não| U_Failure[Exibir Erro\nde Pagamento]
+    U_Failure --> U_RetryPayment[Tentar\nNovamente?]
+    U_RetryPayment -->|Sim| U_Payment
+    U_RetryPayment -->|Não| UserMenu
+    U_Success --> UserMenu
+
+    %% Consulta de tempo para cadastrados
+    U_CheckTime --> U_SelectVehicleCheck[Selecionar Veículo\npara Consulta]
+    U_SelectVehicleCheck --> U_DisplayTime[Exibir Tempo\nRestante]
+    U_DisplayTime --> U_RenewOption{Deseja\nRenovar?}
+    U_RenewOption -->|Sim| U_SelectDuration
+    U_RenewOption -->|Não| UserMenu
+
+    %% Gerenciamento de veículos
+    U_ManageVehicles --> ManageVehiclesMenu[Menu de\nGerenciamento\nde Veículos]
+    ManageVehiclesMenu --> AddVehicle[Adicionar\nVeículo]
+    ManageVehiclesMenu --> EditVehicle[Editar\nVeículo]
+    ManageVehiclesMenu --> RemoveVehicle[Remover\nVeículo]
+    ManageVehiclesMenu --> ReturnUserMenu[Voltar ao\nMenu Principal]
+    ReturnUserMenu --> UserMenu
+
+    AddVehicle --> EnterVehicleDetails[Inserir Placa\ne Modelo]
+    EnterVehicleDetails --> ValidateVehicle{Dados\nVálidos?}
+    ValidateVehicle -->|Não| EnterVehicleDetails
+    ValidateVehicle -->|Sim| SaveVehicle[Salvar Veículo]
+    SaveVehicle --> ManageVehiclesMenu
+
+    EditVehicle --> SelectVehicleToEdit[Selecionar\nVeículo]
+    SelectVehicleToEdit --> ModifyVehicleDetails[Modificar\nDetalhes]
+    ModifyVehicleDetails --> ValidateEditedVehicle{Dados\nVálidos?}
+    ValidateEditedVehicle -->|Não| ModifyVehicleDetails
+    ValidateEditedVehicle -->|Sim| UpdateVehicle[Atualizar\nDados do Veículo]
+    UpdateVehicle --> ManageVehiclesMenu
+
+    RemoveVehicle --> SelectVehicleToRemove[Selecionar\nVeículo]
+    SelectVehicleToRemove --> ConfirmRemoval{Confirmar\nRemoção?}
+    ConfirmRemoval -->|Não| ManageVehiclesMenu
+    ConfirmRemoval -->|Sim| DeleteVehicle[Excluir\nVeículo]
+    DeleteVehicle --> ManageVehiclesMenu
+
+    %% Histórico de permissões
+    U_ViewHistory --> SelectHistoryFilter[Selecionar Filtros\nData/Veículo]
+    SelectHistoryFilter --> DisplayHistory[Exibir Lista\nde Permissões]
+    DisplayHistory --> SelectPermission[Selecionar\nPermissão]
+    SelectPermission --> PermissionDetails[Visualizar\nDetalhes]
+    PermissionDetails --> DownloadReceipt[Baixar\nComprovante]
+    PermissionDetails --> BackToHistory[Voltar ao\nHistórico]
+    BackToHistory --> DisplayHistory
+    DisplayHistory --> ReturnFromHistory[Voltar ao\nMenu Principal]
+    ReturnFromHistory --> UserMenu
+    DownloadReceipt --> PermissionDetails
+
+    %% Configurações da conta
+    U_AccountSettings --> AccountSettingsMenu[Menu de\nConfigurações]
+    AccountSettingsMenu --> EditProfile[Editar Perfil]
+    AccountSettingsMenu --> ChangePassword[Alterar Senha]
+    AccountSettingsMenu --> NotificationSettings[Configurar\nNotificações]
+    AccountSettingsMenu --> ReturnFromSettings[Voltar ao\nMenu Principal]
+    ReturnFromSettings --> UserMenu
+
+    EditProfile --> UpdateProfileForm[Formulário de\nAtualização de Perfil]
+    UpdateProfileForm --> SaveProfile[Salvar\nAlterações]
+    SaveProfile --> AccountSettingsMenu
+
+    ChangePassword --> EnterPasswords[Inserir Senha Atual\ne Nova Senha]
+    EnterPasswords --> ValidatePasswords{Senhas\nVálidas?}
+    ValidatePasswords -->|Não| EnterPasswords
+    ValidatePasswords -->|Sim| UpdatePassword[Atualizar\nSenha]
+    UpdatePassword --> AccountSettingsMenu
+
+    NotificationSettings --> ConfigNotifications[Configurar Alertas\nde Expiração]
+    ConfigNotifications --> SaveNotificationSettings[Salvar\nConfigurações]
+    SaveNotificationSettings --> AccountSettingsMenu
+
+    %% Fluxo para fiscais
+    EntryPoint --> FiscalLoginCheck{É um fiscal?}
+    FiscalLoginCheck -->|Sim| FiscalLogin[Login do\nFiscal]
+    FiscalLogin --> ValidateFiscal{Credenciais\nVálidas?}
+    ValidateFiscal -->|Não| FiscalLogin
+    ValidateFiscal -->|Sim| FiscalMenu[Menu do\nFiscal]
+
+    FiscalMenu --> F_VerifyVehicle[Verificar\nVeículo]
+    FiscalMenu --> F_ViewHistory[Visualizar\nHistórico de\nVerificações]
+    FiscalMenu --> F_SyncData[Sincronizar\nDados Offline]
+
+    %% Verificação de veículos pelo fiscal
+    F_VerifyVehicle --> VerificationMethod{Método de\nVerificação}
+    VerificationMethod -->|Câmera| ScanPlate[Escanear Placa\ncom Câmera]
+    VerificationMethod -->|Manual| EnterPlateManually[Inserir Placa\nManualmente]
+    ScanPlate --> ProcessPlate[Processar\nLeitura da Placa]
+    EnterPlateManually --> ProcessPlate
+    ProcessPlate --> CheckPermitStatus[Verificar Status\nda Permissão]
+    CheckPermitStatus --> DisplayVehicleStatus[Exibir Status\ne Detalhes]
+    DisplayVehicleStatus --> PermitActive{Permissão\nAtiva?}
+    
+    PermitActive -->|Sim| ReturnToFiscalMenu[Voltar ao\nMenu do Fiscal]
+    PermitActive -->|Não| RegisterInfraction[Registrar\nInfração]
+    RegisterInfraction --> CaptureEvidence[Capturar\nFotos/Evidências]
+    CaptureEvidence --> GenerateInfractionCode[Gerar Código\nde Autuação]
+    GenerateInfractionCode --> SaveInfractionDetails[Salvar Detalhes\ne Localização GPS]
+    SaveInfractionDetails --> ReturnToFiscalMenu
+    ReturnToFiscalMenu --> FiscalMenu
+
+    %% Fluxo para gerentes
+    FiscalLoginCheck -->|Não| ManagerLoginCheck{É um gerente?}
+    ManagerLoginCheck -->|Sim| ManagerLogin[Login do\nGerente]
+    ManagerLogin --> ValidateManager{Credenciais\nVálidas?}
+    ValidateManager -->|Não| ManagerLogin
+    ValidateManager -->|Sim| ManagerMenu[Menu do\nGerente]
+
+    ManagerMenu --> M_PriceManagement[Gestão de\nValores]
+    ManagerMenu --> M_Dashboard[Dashboard\nOperacional]
+    ManagerMenu --> M_Reports[Relatórios]
+    ManagerMenu --> M_ZoneManagement[Gestão de\nZonas]
+
+    %% Gestão de valores
+    M_PriceManagement --> SelectPeriodToEdit[Selecionar\nPeríodo]
+    SelectPeriodToEdit --> EnterNewPrice[Inserir\nNovo Valor]
+    EnterNewPrice --> SetEffectiveDate[Definir Data\nde Vigência]
+    SetEffectiveDate --> ConfirmPriceChange{Confirmar\nAlteração?}
+    ConfirmPriceChange -->|Não| M_PriceManagement
+    ConfirmPriceChange -->|Sim| SaveNewPrice[Salvar Novo\nValor]
+    SaveNewPrice --> M_PriceManagement
+
+    %% Dashboard operacional
+    M_Dashboard --> ViewRealTimeMetrics[Visualizar\nMétricas em\nTempo Real]
+    ViewRealTimeMetrics --> SelectDashboardView[Selecionar\nVisualização]
+    SelectDashboardView --> DisplayMetrics[Exibir\nMétricas]
+    DisplayMetrics --> M_Dashboard
+
+    %% Relatórios
+    M_Reports --> SelectReportType[Selecionar\nTipo de Relatório]
+    SelectReportType --> ConfigureReportParameters[Configurar\nParâmetros]
+    ConfigureReportParameters --> GenerateReport[Gerar\nRelatório]
+    GenerateReport --> ViewReport[Visualizar\nRelatório]
+    ViewReport --> ExportReport[Exportar\nRelatório]
+    ExportReport --> M_Reports
+    ViewReport --> M_Reports
+
+    %% Gestão de zonas
+    M_ZoneManagement --> ZoneManagementOptions[Opções de\nGestão de Zonas]
+    ZoneManagementOptions --> AddZone[Adicionar\nZona]
+    ZoneManagementOptions --> EditZone[Editar\nZona]
+    ZoneManagementOptions --> ConfigureZonePrices[Configurar\nPreços por Zona]
+    ZoneManagementOptions --> ViewZoneMetrics[Visualizar\nMétricas por Zona]
+    ZoneManagementOptions --> ReturnToManagerMenu[Voltar ao\nMenu do Gerente]
+    ReturnToManagerMenu --> ManagerMenu
+
+    %% Fluxo para administradores
+    ManagerLoginCheck -->|Não| AdminLoginCheck{É um\nadministrador?}
+    AdminLoginCheck -->|Sim| AdminLogin[Login do\nAdministrador]
+    AdminLogin --> ValidateAdmin{Credenciais\nVálidas?}
+    ValidateAdmin -->|Não| AdminLogin
+    ValidateAdmin -->|Sim| AdminMenu[Menu do\nAdministrador]
+
+    AdminMenu --> A_UserManagement[Gestão de\nUsuários]
+    AdminMenu --> A_SystemConfig[Configurações\ndo Sistema]
+    AdminMenu --> A_AdvancedAnalytics[Análises\nAvançadas]
+    AdminMenu --> A_AuditLogs[Logs de\nAuditoria]
+    AdminMenu --> A_BackupRestore[Backup e\nRestauração]
+
+    %% Gestão de usuários pelo administrador
+    A_UserManagement --> SelectUserType[Selecionar\nTipo de Usuário]
+    SelectUserType --> UserManagementActions[Ações de\nGestão de Usuários]
+    UserManagementActions --> AddUser[Adicionar\nUsuário]
+    UserManagementActions --> EditUser[Editar\nUsuário]
+    UserManagementActions --> DeactivateUser[Desativar\nUsuário]
+    UserManagementActions --> ManagePermissions[Gerenciar\nPermissões]
+    UserManagementActions --> ReturnToAdminMenu[Voltar ao\nMenu do Admin]
+    ReturnToAdminMenu --> AdminMenu
+
+    %% Configurações do sistema
+    A_SystemConfig --> SelectConfigCategory[Selecionar\nCategoria]
+    SelectConfigCategory --> EditParameters[Editar\nParâmetros]
+    EditParameters --> SaveParameters[Salvar\nParâmetros]
+    SaveParameters --> A_SystemConfig
+
+    %% Análises avançadas
+    A_AdvancedAnalytics --> SelectAnalyticsView[Selecionar\nVisualização]
+    SelectAnalyticsView --> ConfigureAnalyticsParams[Configurar\nParâmetros]
+    ConfigureAnalyticsParams --> GenerateAnalytics[Gerar\nAnálises]
+    GenerateAnalytics --> ViewAnalytics[Visualizar\nGráficos e Dados]
+    ViewAnalytics --> ExportAnalytics[Exportar\nDados]
+    ExportAnalytics --> A_AdvancedAnalytics
+    ViewAnalytics --> A_AdvancedAnalytics
+
+    %% Usuários não autenticados e nenhum tipo específico
+    AdminLoginCheck -->|Não| LoginCheck

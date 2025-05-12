@@ -1,0 +1,368 @@
+// schema.prisma
+// Definição do schema Prisma para o Sistema de Estacionamento Rotativo Municipal
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Modelos principais
+
+model User {
+  id              String           @id @default(uuid())
+  name            String
+  email           String           @unique
+  cpf             String?          @unique
+  phone           String?          // Número de WhatsApp para notificações
+  passwordHash    String
+  role            UserRole         @default(CITIZEN)
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relações
+  vehicles        Vehicle[]
+  parkingPermits  ParkingPermit[]
+  fiscalActions   FiscalAction[]   @relation("FiscalActions")
+  priceChanges    PriceChange[]    @relation("PriceChangeAuthor")
+  
+  // Informações específicas por papel
+  fiscalCode      String?          // Código do fiscal (quando role = FISCAL)
+  managerDept     String?          // Departamento do gerente (quando role = MANAGER)
+  
+  @@map("users")
+}
+
+enum UserRole {
+  CITIZEN
+  FISCAL
+  MANAGER
+  ADMIN
+}
+
+model Vehicle {
+  id              String           @id @default(uuid())
+  licensePlate    String           // Placa do veículo
+  model           String           // Modelo do veículo
+  userId          String?          // Pode ser nulo para compras sem cadastro
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relações
+  user            User?            @relation(fields: [userId], references: [id])
+  parkingPermits  ParkingPermit[]
+  infringements   Infringement[]
+  
+  @@unique([licensePlate])
+  @@index([licensePlate])
+  @@map("vehicles")
+}
+
+model ParkingPermit {
+  id              String           @id @default(uuid())
+  vehicleId       String
+  userId          String?          // Pode ser nulo para compras sem cadastro
+  durationHours   Int              // 1, 2, 3, 4, 5, 6, ou 12 horas
+  startTime       DateTime         // Hora de início da permissão
+  endTime         DateTime         // Hora de término da permissão
+  zoneId          String
+  amount          Decimal          @db.Decimal(10, 2)
+  paymentStatus   PaymentStatus    @default(PENDING)
+  paymentId       String?          // ID da transação no gateway de pagamento
+  paymentMethod   PaymentMethod?
+  transactionCode String?          @unique  // Código para consulta sem login
+  notificationSent Boolean         @default(false) // Se o alerta foi enviado
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relações
+  vehicle         Vehicle          @relation(fields: [vehicleId], references: [id])
+  user            User?            @relation(fields: [userId], references: [id])
+  zone            Zone             @relation(fields: [zoneId], references: [id])
+  priceConfig     PriceConfig      @relation(fields: [priceId], references: [id])
+  priceId         String
+  
+  // Verificações de fiscais
+  verifications   Verification[]
+  
+  @@index([vehicleId])
+  @@index([startTime, endTime])
+  @@index([paymentStatus])
+  @@map("parking_permits")
+}
+
+enum PaymentStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  CREDIT_CARD
+  DEBIT_CARD
+  PIX
+  BOLETO
+}
+
+model Zone {
+  id              String           @id @default(uuid())
+  name            String           // Nome da zona (ex: "Centro", "Orla", etc)
+  description     String?
+  active          Boolean          @default(true)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relações
+  parkingPermits  ParkingPermit[]
+  priceConfigs    PriceConfig[]    // Diferentes configurações de preço para a zona
+  
+  @@map("zones")
+}
+
+model PriceConfig {
+  id              String           @id @default(uuid())
+  zoneId          String
+  validFrom       DateTime         // Data/hora a partir da qual o preço é válido
+  validTo         DateTime?        // Data/hora até quando o preço é válido (null = ainda válido)
+  hour1Price      Decimal          @db.Decimal(10, 2) // Preço para 1 hora
+  hour2Price      Decimal          @db.Decimal(10, 2) // Preço para 2 horas
+  hour3Price      Decimal          @db.Decimal(10, 2) // Preço para 3 horas
+  hour4Price      Decimal          @db.Decimal(10, 2) // Preço para 4 horas
+  hour5Price      Decimal          @db.Decimal(10, 2) // Preço para 5 horas
+  hour6Price      Decimal          @db.Decimal(10, 2) // Preço para 6 horas
+  hour12Price     Decimal          @db.Decimal(10, 2) // Preço para 12 horas
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  
+  // Relações
+  zone            Zone             @relation(fields: [zoneId], references: [id])
+  parkingPermits  ParkingPermit[]
+  priceChanges    PriceChange[]    // Histórico de alterações
+  
+  @@index([zoneId, validFrom, validTo])
+  @@map("price_configs")
+}
+
+model PriceChange {
+  id              String           @id @default(uuid())
+  priceConfigId   String
+  authorId        String
+  changeDate      DateTime         @default(now())
+  changeType      ChangeType
+  oldValue        Json?            // Valores antigos em formato JSON
+  newValue        Json             // Novos valores em formato JSON
+  reason          String?          // Razão da alteração
+  
+  // Relações
+  priceConfig     PriceConfig      @relation(fields: [priceConfigId], references: [id])
+  author          User             @relation("PriceChangeAuthor", fields: [authorId], references: [id])
+  
+  @@map("price_changes")
+}
+
+enum ChangeType {
+  CREATE
+  UPDATE
+  DEACTIVATE
+}
+
+// Modelos para fiscalização
+
+model FiscalAction {
+  id              String           @id @default(uuid())
+  fiscalId        String
+  actionType      FiscalActionType
+  licensePlate    String?          // Placa verificada (se aplicável)
+  latitude        Float?           // Localização da ação
+  longitude       Float?
+  actionTime      DateTime         @default(now())
+  
+  // Relações
+  fiscal          User             @relation("FiscalActions", fields: [fiscalId], references: [id])
+  verifications   Verification[]
+  infringements   Infringement[]
+  
+  @@map("fiscal_actions")
+}
+
+enum FiscalActionType {
+  VERIFICATION
+  INFRINGEMENT
+  PATROL
+}
+
+model Verification {
+  id              String           @id @default(uuid())
+  fiscalActionId  String
+  permitId        String
+  result          VerificationResult
+  notes           String?
+  
+  // Relações
+  fiscalAction    FiscalAction     @relation(fields: [fiscalActionId], references: [id])
+  permit          ParkingPermit    @relation(fields: [permitId], references: [id])
+  
+  @@map("verifications")
+}
+
+enum VerificationResult {
+  VALID
+  EXPIRED
+  NOT_FOUND
+}
+
+model Infringement {
+  id              String           @id @default(uuid())
+  fiscalActionId  String
+  vehicleId       String
+  infringementType InfringementType
+  evidencePhotos  String[]         // URLs das fotos de evidência
+  notes           String?
+  status          InfringementStatus @default(REGISTERED)
+  
+  // Relações
+  fiscalAction    FiscalAction     @relation(fields: [fiscalActionId], references: [id])
+  vehicle         Vehicle          @relation(fields: [vehicleId], references: [id])
+  
+  @@map("infringements")
+}
+
+enum InfringementType {
+  NO_PERMIT
+  EXPIRED_PERMIT
+  INVALID_ZONE
+}
+
+enum InfringementStatus {
+  REGISTERED
+  NOTIFIED
+  CONTESTED
+  CONFIRMED
+  PAID
+  CANCELLED
+}
+
+// Modelos para logs e auditoria
+
+model AuditLog {
+  id              String           @id @default(uuid())
+  entityType      String           // Tipo de entidade (User, Vehicle, etc)
+  entityId        String           // ID da entidade afetada
+  action          String           // Ação realizada (create, update, delete)
+  performedBy     String           // ID do usuário que realizou a ação
+  timestamp       DateTime         @default(now())
+  oldValues       Json?            // Valores antigos (se aplicável)
+  newValues       Json?            // Novos valores (se aplicável)
+  ipAddress       String?          // Endereço IP
+  userAgent       String?          // User agent do navegador
+  
+  @@index([entityType, entityId])
+  @@index([performedBy])
+  @@index([timestamp])
+  @@map("audit_logs")
+}
+
+model SystemConfig {
+  id              String           @id @default(uuid())
+  configKey       String           @unique
+  configValue     String
+  description     String?
+  updatedBy       String?
+  updatedAt       DateTime         @updatedAt
+  
+  @@map("system_configs")
+}
+
+// Modelo para notificações
+
+model Notification {
+  id              String           @id @default(uuid())
+  userId          String
+  type            NotificationType
+  title           String
+  message         String
+  isRead          Boolean          @default(false)
+  channel         NotificationChannel
+  sentAt          DateTime         @default(now())
+  readAt          DateTime?
+  
+  @@index([userId, isRead])
+  @@map("notifications")
+}
+
+enum NotificationType {
+  PERMIT_EXPIRING
+  PERMIT_EXPIRED
+  INFRINGEMENT_NOTICE
+  SYSTEM_UPDATE
+}
+
+enum NotificationChannel {
+  APP
+  EMAIL
+  WHATSAPP
+}
+
+// Modelo para estatísticas e relatórios
+
+model DailyStatistic {
+  id              String           @id @default(uuid())
+  date            DateTime         @unique
+  totalPermits    Int              @default(0)
+  totalRevenue    Decimal          @default(0) @db.Decimal(10, 2)
+  registeredUsers Int              @default(0)
+  nonRegisteredUsers Int           @default(0)
+  totalInfringements Int           @default(0)
+  peakHour        Int?             // Hora do dia com mais compras (0-23)
+  
+  // Estatísticas por zona
+  zoneStats       ZoneStatistic[]
+  
+  @@map("daily_statistics")
+}
+
+model ZoneStatistic {
+  id              String           @id @default(uuid())
+  dailyStatId     String
+  zoneId          String
+  permits         Int              @default(0)
+  revenue         Decimal          @default(0) @db.Decimal(10, 2)
+  occupancyRate   Float?           // Taxa de ocupação estimada (%)
+  
+  // Relações
+  dailyStat       DailyStatistic   @relation(fields: [dailyStatId], references: [id])
+  
+  @@map("zone_statistics")
+}
+
+// Modelo para integrações de pagamento
+
+model PaymentTransaction {
+  id              String           @id @default(uuid())
+  externalId      String           @unique  // ID no sistema externo (Asaas, Mercado Pago, Stripe)
+  provider        PaymentProvider
+  amount          Decimal          @db.Decimal(10, 2)
+  currency        String           @default("BRL")
+  status          String
+  paymentMethod   String?
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  rawResponse     Json?            // Resposta completa do gateway
+  metadata        Json?            // Metadados adicionais
+  
+  @@index([externalId])
+  @@index([provider, status])
+  @@map("payment_transactions")
+}
+
+enum PaymentProvider {
+  ASAAS
+  MERCADO_PAGO
+  STRIPE
+}
