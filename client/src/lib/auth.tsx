@@ -1,7 +1,7 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import React, { createContext, useContext, useState, useEffect, ReactNode } from "react";
 import { User } from "@shared/schema";
-import { apiRequest } from "./queryClient";
 
+// Define the context type
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -10,14 +10,22 @@ interface AuthContextType {
   logout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+// Create context with a default value
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  login: async () => { throw new Error("AuthContext not initialized"); },
+  register: async () => { throw new Error("AuthContext not initialized"); },
+  logout: async () => { throw new Error("AuthContext not initialized"); },
+});
 
-export function AuthProvider({ children }: { children: ReactNode }): JSX.Element {
+// Auth Provider component
+export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
+  // Check if user is logged in on component mount
   useEffect(() => {
-    // Check if user is logged in
     const checkAuth = async () => {
       try {
         const res = await fetch("/api/auth/me", {
@@ -38,10 +46,23 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     checkAuth();
   }, []);
 
+  // Login function
   const login = async (email: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await apiRequest("POST", "/api/auth/login", { email, password });
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error("Login failed");
+      }
+      
       const userData = await res.json();
       setUser(userData);
       return userData;
@@ -50,10 +71,23 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     }
   };
 
+  // Register function
   const register = async (userData: any): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await apiRequest("POST", "/api/auth/register", userData);
+      const res = await fetch("/api/auth/register", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userData),
+        credentials: "include",
+      });
+      
+      if (!res.ok) {
+        throw new Error("Registration failed");
+      }
+      
       const newUserData = await res.json();
       setUser(newUserData);
       return newUserData;
@@ -62,17 +96,21 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
     }
   };
 
+  // Logout function
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      await apiRequest("POST", "/api/auth/logout");
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
       setUser(null);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const contextValue: AuthContextType = {
+  const value = {
     user,
     isLoading,
     login,
@@ -81,16 +119,13 @@ export function AuthProvider({ children }: { children: ReactNode }): JSX.Element
   };
 
   return (
-    <AuthContext.Provider value={contextValue}>
+    <AuthContext.Provider value={value}>
       {children}
     </AuthContext.Provider>
   );
 }
 
-export function useAuth(): AuthContextType {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error("useAuth must be used within an AuthProvider");
-  }
-  return context;
+// Custom hook to use the auth context
+export function useAuth() {
+  return useContext(AuthContext);
 }
