@@ -1,0 +1,626 @@
+import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
+import { useAuth } from "@/lib/auth";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { LicensePlateInput } from "@/components/ui/license-plate-input";
+import { DurationOption } from "@/components/ui/duration-option";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/hooks/use-toast";
+import { Helmet } from "react-helmet";
+import { formatMoney, formatDateTime } from "@/lib/utils";
+import { useQuery, useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { PaymentMethod } from "@shared/schema";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { LoadingSpinner } from "@/components/ui/spinner";
+import { 
+  Form, 
+  FormControl, 
+  FormField, 
+  FormItem, 
+  FormLabel, 
+  FormMessage 
+} from "@/components/ui/form";
+import { z } from "zod";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
+// Form schema
+const quickBuySchema = z.object({
+  licensePlate: z.string().min(7, "Placa deve ter no mínimo 7 caracteres").max(8, "Placa deve ter no máximo 8 caracteres"),
+  model: z.string().min(2, "Modelo deve ter pelo menos 2 caracteres"),
+  durationHours: z.number().min(1).max(12),
+  zoneId: z.number().positive(),
+  paymentMethod: z.enum([PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX]),
+});
+
+type QuickBuyFormData = z.infer<typeof quickBuySchema>;
+
+// Credit card form schema
+const creditCardSchema = z.object({
+  cardNumber: z.string().min(16, "Número do cartão deve ter pelo menos 16 dígitos"),
+  cardExpiry: z.string().min(5, "Data de validade inválida"),
+  cardCvv: z.string().min(3, "CVV inválido"),
+  cardName: z.string().min(3, "Nome no cartão é obrigatório"),
+});
+
+type CreditCardFormData = z.infer<typeof creditCardSchema>;
+
+export default function QuickBuy() {
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const [location, navigate] = useLocation();
+  
+  // State variables
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
+  const [selectedHourPrice, setSelectedHourPrice] = useState<string>("0.00");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [permitData, setPermitData] = useState<any>(null);
+  
+  // Get zones
+  const { data: zones, isLoading: isLoadingZones } = useQuery({
+    queryKey: ['/api/zones'],
+  });
+  
+  // Get user vehicles if logged in
+  const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery({
+    queryKey: ['/api/vehicles'],
+    enabled: !!user,
+  });
+  
+  // Get current price config for selected zone
+  const { data: priceConfig, isLoading: isLoadingPrices } = useQuery({
+    queryKey: ['/api/prices', selectedZoneId],
+    enabled: !!selectedZoneId,
+  });
+  
+  // Form for quick buy
+  const quickBuyForm = useForm<QuickBuyFormData>({
+    resolver: zodResolver(quickBuySchema),
+    defaultValues: {
+      licensePlate: "",
+      model: "",
+      durationHours: 0,
+      zoneId: 0,
+      paymentMethod: PaymentMethod.CREDIT_CARD,
+    },
+  });
+  
+  // Credit card form
+  const creditCardForm = useForm<CreditCardFormData>({
+    resolver: zodResolver(creditCardSchema),
+    defaultValues: {
+      cardNumber: "",
+      cardExpiry: "",
+      cardCvv: "",
+      cardName: "",
+    },
+  });
+  
+  // Get selected zone id from form
+  const selectedZoneId = quickBuyForm.watch("zoneId");
+  const selectedPaymentMethod = quickBuyForm.watch("paymentMethod");
+  
+  // Set default zone if available
+  useEffect(() => {
+    if (zones && zones.length > 0 && !selectedZoneId) {
+      quickBuyForm.setValue("zoneId", zones[0].id);
+    }
+  }, [zones]);
+  
+  // Update price when duration or zone changes
+  useEffect(() => {
+    if (priceConfig && selectedDuration) {
+      switch (selectedDuration) {
+        case 1:
+          setSelectedHourPrice(priceConfig.hour1Price);
+          break;
+        case 2:
+          setSelectedHourPrice(priceConfig.hour2Price);
+          break;
+        case 3:
+          setSelectedHourPrice(priceConfig.hour3Price);
+          break;
+        case 4:
+          setSelectedHourPrice(priceConfig.hour4Price);
+          break;
+        case 5:
+          setSelectedHourPrice(priceConfig.hour5Price);
+          break;
+        case 6:
+          setSelectedHourPrice(priceConfig.hour6Price);
+          break;
+        case 12:
+          setSelectedHourPrice(priceConfig.hour12Price);
+          break;
+        default:
+          setSelectedHourPrice("0.00");
+      }
+      quickBuyForm.setValue("durationHours", selectedDuration);
+    }
+  }, [selectedDuration, priceConfig]);
+  
+  // Purchase permit mutation
+  const purchasePermitMutation = useMutation({
+    mutationFn: async (data: QuickBuyFormData) => {
+      const response = await apiRequest("POST", "/api/permits/quick-buy", data);
+      return await response.json();
+    },
+    onSuccess: (data) => {
+      setPermitData(data);
+      navigate("/permit-confirmation?id=" + data.id);
+    },
+    onError: (error: any) => {
+      setIsSubmitting(false);
+      toast({
+        title: "Erro na compra",
+        description: error.message || "Ocorreu um erro ao processar sua compra. Tente novamente.",
+        variant: "destructive",
+      });
+    },
+  });
+  
+  // Handle form submission
+  const onSubmit = async (data: QuickBuyFormData) => {
+    setIsSubmitting(true);
+    
+    // If credit card selected, validate card details
+    if (data.paymentMethod === PaymentMethod.CREDIT_CARD) {
+      const creditCardValid = await creditCardForm.trigger();
+      if (!creditCardValid) {
+        setIsSubmitting(false);
+        return;
+      }
+    }
+    
+    purchasePermitMutation.mutate(data);
+  };
+  
+  // Calculate end time
+  const getEndTime = () => {
+    if (!selectedDuration) return "";
+    
+    const now = new Date();
+    const endTime = new Date(now.getTime() + selectedDuration * 60 * 60 * 1000);
+    
+    return formatDateTime(endTime);
+  };
+  
+  if (isLoadingZones || isLoadingPrices || (user && isLoadingVehicles)) {
+    return <LoadingSpinner />;
+  }
+  
+  return (
+    <>
+      <Helmet>
+        <title>Comprar Permissão - EstacionaFácil</title>
+        <meta name="description" content="Compre uma permissão de estacionamento de forma rápida e simples." />
+      </Helmet>
+      
+      <Card className="max-w-2xl mx-auto">
+        <CardHeader className="p-6 flex justify-between items-center">
+          <CardTitle className="text-xl">Compra Rápida de Permissão</CardTitle>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
+            <i className="material-icons">close</i>
+          </Button>
+        </CardHeader>
+        
+        <CardContent className="p-6">
+          <Form {...quickBuyForm}>
+            <form onSubmit={quickBuyForm.handleSubmit(onSubmit)}>
+              {/* Step 1: Vehicle Data */}
+              <div className={currentStep === 1 ? "block" : "hidden"}>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">1</div>
+                    <span className="font-semibold">Dados do Veículo</span>
+                  </div>
+                  <Separator className="flex-grow ml-4" />
+                </div>
+                
+                {user && userVehicles?.length > 0 && (
+                  <div className="mb-6">
+                    <Label className="block text-sm font-medium text-gray-700 mb-2">
+                      Selecione um veículo cadastrado:
+                    </Label>
+                    <Select 
+                      onValueChange={(value) => {
+                        if (value === "new") {
+                          quickBuyForm.setValue("licensePlate", "");
+                          quickBuyForm.setValue("model", "");
+                        } else {
+                          const vehicle = userVehicles.find((v: any) => v.id.toString() === value);
+                          if (vehicle) {
+                            quickBuyForm.setValue("licensePlate", vehicle.licensePlate);
+                            quickBuyForm.setValue("model", vehicle.model);
+                          }
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder="Selecione um veículo" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {userVehicles.map((vehicle: any) => (
+                          <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
+                            {vehicle.licensePlate} - {vehicle.model}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="new">+ Novo veículo</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <FormField
+                    control={quickBuyForm.control}
+                    name="licensePlate"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Placa do Veículo</FormLabel>
+                        <FormControl>
+                          <LicensePlateInput
+                            placeholder="ABC1234"
+                            value={field.value}
+                            onChange={field.onChange}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                        <p className="text-xs text-gray-500 mt-1">Formato: ABC1234 ou ABC1D23</p>
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={quickBuyForm.control}
+                    name="model"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Modelo do Veículo</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Ex: Fiat Palio" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-2">2</div>
+                    <span className="text-gray-500">Tempo Desejado</span>
+                  </div>
+                  <Separator className="flex-grow ml-4" />
+                </div>
+                
+                <FormField
+                  control={quickBuyForm.control}
+                  name="zoneId"
+                  render={({ field }) => (
+                    <FormItem className="mb-6">
+                      <FormLabel>Zona de Estacionamento</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value.toString()}
+                          onValueChange={(value) => field.onChange(parseInt(value))}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder="Selecione uma zona" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {zones?.map((zone: any) => (
+                              <SelectItem key={zone.id} value={zone.id.toString()}>
+                                {zone.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <div className="flex justify-end">
+                  <Button
+                    type="button"
+                    className="bg-primary hover:bg-primary-light text-white"
+                    onClick={() => {
+                      const isValid = quickBuyForm.trigger(["licensePlate", "model", "zoneId"]);
+                      if (isValid) {
+                        setCurrentStep(2);
+                      }
+                    }}
+                  >
+                    Próximo
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Step 2: Duration */}
+              <div className={currentStep === 2 ? "block" : "hidden"}>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">2</div>
+                    <span className="font-semibold">Tempo Desejado</span>
+                  </div>
+                  <Separator className="flex-grow ml-4" />
+                </div>
+                
+                <div className="mb-6">
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">Selecione a duração:</Label>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
+                    {priceConfig && (
+                      <>
+                        <DurationOption
+                          hours={1}
+                          price={priceConfig.hour1Price}
+                          selected={selectedDuration === 1}
+                          onClick={() => setSelectedDuration(1)}
+                        />
+                        <DurationOption
+                          hours={2}
+                          price={priceConfig.hour2Price}
+                          selected={selectedDuration === 2}
+                          onClick={() => setSelectedDuration(2)}
+                        />
+                        <DurationOption
+                          hours={3}
+                          price={priceConfig.hour3Price}
+                          selected={selectedDuration === 3}
+                          onClick={() => setSelectedDuration(3)}
+                        />
+                        <DurationOption
+                          hours={4}
+                          price={priceConfig.hour4Price}
+                          selected={selectedDuration === 4}
+                          onClick={() => setSelectedDuration(4)}
+                        />
+                        <DurationOption
+                          hours={5}
+                          price={priceConfig.hour5Price}
+                          selected={selectedDuration === 5}
+                          onClick={() => setSelectedDuration(5)}
+                        />
+                        <DurationOption
+                          hours={6}
+                          price={priceConfig.hour6Price}
+                          selected={selectedDuration === 6}
+                          onClick={() => setSelectedDuration(6)}
+                        />
+                        <DurationOption
+                          hours={12}
+                          price={priceConfig.hour12Price}
+                          selected={selectedDuration === 12}
+                          onClick={() => setSelectedDuration(12)}
+                        />
+                      </>
+                    )}
+                  </div>
+                  {quickBuyForm.formState.errors.durationHours && (
+                    <p className="text-sm text-red-500 mt-1">Selecione uma duração</p>
+                  )}
+                </div>
+                
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-2">3</div>
+                    <span className="text-gray-500">Pagamento</span>
+                  </div>
+                  <Separator className="flex-grow ml-4" />
+                </div>
+                
+                <div className="flex justify-between space-x-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCurrentStep(1)}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    type="button"
+                    className="bg-primary hover:bg-primary-light text-white"
+                    onClick={() => {
+                      if (selectedDuration) {
+                        setCurrentStep(3);
+                      } else {
+                        quickBuyForm.setError("durationHours", {
+                          type: "manual",
+                          message: "Selecione uma duração",
+                        });
+                      }
+                    }}
+                  >
+                    Próximo
+                  </Button>
+                </div>
+              </div>
+              
+              {/* Step 3: Payment */}
+              <div className={currentStep === 3 ? "block" : "hidden"}>
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">3</div>
+                    <span className="font-semibold">Pagamento</span>
+                  </div>
+                  <Separator className="flex-grow ml-4" />
+                </div>
+                
+                <div className="mb-6">
+                  <div className="bg-gray-50 p-4 rounded-lg mb-4">
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-600">Duração:</span>
+                      <span className="font-semibold">
+                        {selectedDuration} {selectedDuration === 1 ? "hora" : "horas"}
+                      </span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-600">Placa:</span>
+                      <span className="font-semibold">{quickBuyForm.getValues("licensePlate")}</span>
+                    </div>
+                    <div className="flex justify-between mb-2">
+                      <span className="text-gray-600">Validade:</span>
+                      <span className="font-semibold">
+                        {formatDateTime(new Date())} até {getEndTime()}
+                      </span>
+                    </div>
+                    <div className="flex justify-between font-semibold text-lg border-t border-gray-300 pt-2 mt-2">
+                      <span>Total:</span>
+                      <span className="text-secondary">{formatMoney(selectedHourPrice)}</span>
+                    </div>
+                  </div>
+                  
+                  <FormField
+                    control={quickBuyForm.control}
+                    name="paymentMethod"
+                    render={({ field }) => (
+                      <FormItem className="mb-4">
+                        <FormLabel>Forma de pagamento:</FormLabel>
+                        <FormControl>
+                          <RadioGroup
+                            value={field.value}
+                            onValueChange={(value: any) => field.onChange(value)}
+                            className="space-y-2"
+                          >
+                            <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
+                              <RadioGroupItem value={PaymentMethod.CREDIT_CARD} id="credit-card" className="mr-3" />
+                              <Label htmlFor="credit-card" className="flex-grow cursor-pointer">
+                                Cartão de Crédito
+                              </Label>
+                              <div className="flex space-x-1">
+                                <span className="inline-block w-8 h-5 bg-blue-800 rounded"></span>
+                                <span className="inline-block w-8 h-5 bg-yellow-500 rounded"></span>
+                                <span className="inline-block w-8 h-5 bg-red-600 rounded"></span>
+                              </div>
+                            </div>
+                            <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
+                              <RadioGroupItem value={PaymentMethod.PIX} id="pix" className="mr-3" />
+                              <Label htmlFor="pix" className="flex-grow cursor-pointer">
+                                PIX
+                              </Label>
+                              <span className="inline-block w-8 h-5 bg-green-500 rounded flex items-center justify-center text-white text-xs font-bold">PIX</span>
+                            </div>
+                          </RadioGroup>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  {selectedPaymentMethod === PaymentMethod.CREDIT_CARD && (
+                    <div className="border border-gray-300 rounded-lg p-4">
+                      <Form {...creditCardForm}>
+                        <div className="grid grid-cols-1 gap-4 mb-4">
+                          <FormField
+                            control={creditCardForm.control}
+                            name="cardNumber"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Número do Cartão</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="1234 5678 9012 3456" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          
+                          <div className="grid grid-cols-2 gap-4">
+                            <FormField
+                              control={creditCardForm.control}
+                              name="cardExpiry"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Validade</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="MM/AA" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            
+                            <FormField
+                              control={creditCardForm.control}
+                              name="cardCvv"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>CVV</FormLabel>
+                                  <FormControl>
+                                    <Input placeholder="123" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                          
+                          <FormField
+                            control={creditCardForm.control}
+                            name="cardName"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Nome no Cartão</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="NOME COMO ESTÁ NO CARTÃO" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                      </Form>
+                    </div>
+                  )}
+                  
+                  {selectedPaymentMethod === PaymentMethod.PIX && (
+                    <div className="border border-gray-300 rounded-lg p-4 text-center">
+                      <div className="mb-4">
+                        <i className="material-icons text-5xl text-green-600 mb-2">qr_code_2</i>
+                        <p className="text-gray-700 mb-2">Utilize o QR Code ou código PIX abaixo para realizar o pagamento</p>
+                        <div className="bg-gray-200 p-4 rounded text-xs font-mono break-all">
+                          00020126360014BR.GOV.BCB.PIX0114+55279999999995204000053039865802BR5924PREFEITURA MUNICIPAL DE XYZ6009SAO PAULO62070503***6304E2CA
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex justify-between space-x-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setCurrentStep(2)}
+                  >
+                    Voltar
+                  </Button>
+                  <Button
+                    type="submit"
+                    className="bg-secondary hover:bg-secondary-light text-white"
+                    disabled={isSubmitting || purchasePermitMutation.isPending}
+                  >
+                    {isSubmitting ? "Processando..." : "Confirmar e Pagar"}
+                  </Button>
+                </div>
+              </div>
+            </form>
+          </Form>
+        </CardContent>
+      </Card>
+    </>
+  );
+}
