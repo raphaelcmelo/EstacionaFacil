@@ -18,7 +18,14 @@ import { Helmet } from "react-helmet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 
 const formSchema = z.object({
   email: z.string().email("E-mail inválido").min(1, "E-mail é obrigatório"),
@@ -28,11 +35,13 @@ const formSchema = z.object({
 type FormData = z.infer<typeof formSchema>;
 
 export default function Login() {
-  const { login } = useAuth();
+  const authContextValue = useAuth();
+  console.log("AuthContext Value in Login:", authContextValue);
+  const { login } = authContextValue;
   const [, navigate] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -48,7 +57,9 @@ export default function Login() {
       await login(data.email, data.password);
       navigate("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Falha ao fazer login. Verifique suas credenciais.");
+      setError(
+        err.message || "Falha ao fazer login. Verifique suas credenciais."
+      );
     } finally {
       setIsLoading(false);
     }
@@ -58,13 +69,18 @@ export default function Login() {
     <>
       <Helmet>
         <title>Login - EstacionaFácil</title>
-        <meta name="description" content="Faça login na sua conta para gerenciar permissões de estacionamento, veículos e histórico." />
+        <meta
+          name="description"
+          content="Faça login na sua conta para gerenciar permissões de estacionamento, veículos e histórico."
+        />
       </Helmet>
-      
+
       <div className="flex justify-center items-center py-8">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Login</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">
+              Login
+            </CardTitle>
             <CardDescription className="text-center">
               Entre com seu e-mail e senha para acessar sua conta
             </CardDescription>
@@ -76,9 +92,12 @@ export default function Login() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <FormField
                   control={form.control}
                   name="email"
@@ -92,7 +111,7 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -106,10 +125,10 @@ export default function Login() {
                     </FormItem>
                   )}
                 />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-primary hover:bg-primary-light" 
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary-light"
                   disabled={isLoading}
                 >
                   {isLoading ? "Entrando..." : "Entrar"}

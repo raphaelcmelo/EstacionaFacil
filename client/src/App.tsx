@@ -23,32 +23,32 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminZones from "@/pages/admin/zones";
 import AdminPrices from "@/pages/admin/prices";
-import { useAuth } from "./lib/auth";
+import { useAuth } from "@/lib/auth";
 import { Suspense, lazy } from "react";
 import { LoadingSpinner } from "@/components/ui/spinner";
 
-function ProtectedRoute({ 
-  component: Component, 
-  roles = ["CITIZEN", "FISCAL", "MANAGER", "ADMIN"], 
-  ...rest 
-}: { 
-  component: React.ComponentType<any>, 
-  roles?: string[] 
+function ProtectedRoute({
+  component: Component,
+  roles = ["CITIZEN", "FISCAL", "MANAGER", "ADMIN"],
+  ...rest
+}: {
+  component: React.ComponentType<any>;
+  roles?: string[];
 }) {
   const { user, isLoading } = useAuth();
-  
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
-  
+
   if (!user) {
     return <Login />;
   }
-  
+
   if (roles.length > 0 && !roles.includes(user.role)) {
     return <NotFound />;
   }
-  
+
   return <Component {...rest} />;
 }
 
@@ -63,40 +63,80 @@ function Router() {
         <Route path="/quick-buy" component={QuickBuy} />
         <Route path="/check-permit" component={CheckPermit} />
         <Route path="/permit-confirmation" component={PermitConfirmation} />
-        
+
         {/* User routes */}
         <Route path="/dashboard">
-          {() => <ProtectedRoute component={UserDashboard} roles={["CITIZEN", "FISCAL", "MANAGER", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={UserDashboard}
+              roles={["CITIZEN", "FISCAL", "MANAGER", "ADMIN"]}
+            />
+          )}
         </Route>
         <Route path="/vehicles">
-          {() => <ProtectedRoute component={UserVehicles} roles={["CITIZEN", "FISCAL", "MANAGER", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={UserVehicles}
+              roles={["CITIZEN", "FISCAL", "MANAGER", "ADMIN"]}
+            />
+          )}
         </Route>
         <Route path="/history">
-          {() => <ProtectedRoute component={UserHistory} roles={["CITIZEN", "FISCAL", "MANAGER", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={UserHistory}
+              roles={["CITIZEN", "FISCAL", "MANAGER", "ADMIN"]}
+            />
+          )}
         </Route>
-        
+
         {/* Fiscal routes */}
         <Route path="/fiscal">
-          {() => <ProtectedRoute component={FiscalDashboard} roles={["FISCAL", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={FiscalDashboard}
+              roles={["FISCAL", "ADMIN"]}
+            />
+          )}
         </Route>
         <Route path="/fiscal/verify">
-          {() => <ProtectedRoute component={FiscalVerify} roles={["FISCAL", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={FiscalVerify}
+              roles={["FISCAL", "ADMIN"]}
+            />
+          )}
         </Route>
-        
+
         {/* Admin routes */}
         <Route path="/admin">
-          {() => <ProtectedRoute component={AdminDashboard} roles={["MANAGER", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={AdminDashboard}
+              roles={["MANAGER", "ADMIN"]}
+            />
+          )}
         </Route>
         <Route path="/admin/users">
           {() => <ProtectedRoute component={AdminUsers} roles={["ADMIN"]} />}
         </Route>
         <Route path="/admin/zones">
-          {() => <ProtectedRoute component={AdminZones} roles={["MANAGER", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={AdminZones}
+              roles={["MANAGER", "ADMIN"]}
+            />
+          )}
         </Route>
         <Route path="/admin/prices">
-          {() => <ProtectedRoute component={AdminPrices} roles={["MANAGER", "ADMIN"]} />}
+          {() => (
+            <ProtectedRoute
+              component={AdminPrices}
+              roles={["MANAGER", "ADMIN"]}
+            />
+          )}
         </Route>
-        
+
         {/* Fallback to 404 */}
         <Route component={NotFound} />
       </Switch>
