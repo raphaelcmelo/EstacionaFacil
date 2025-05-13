@@ -11,6 +11,7 @@ import Home from "@/pages/home";
 import Login from "@/pages/login";
 import Register from "@/pages/register";
 import QuickBuy from "@/pages/quick-buy";
+import PurchaseOptions from "@/pages/purchase-options";
 import CheckPermit from "@/pages/check-permit";
 import PermitConfirmation from "@/pages/permit-confirmation";
 import UserDashboard from "@/pages/user/dashboard";
@@ -58,6 +59,7 @@ function Router() {
         <Route path="/" component={Home} />
         <Route path="/login" component={Login} />
         <Route path="/register" component={Register} />
+        <Route path="/purchase" component={PurchaseOptions} />
         <Route path="/quick-buy" component={QuickBuy} />
         <Route path="/check-permit" component={CheckPermit} />
         <Route path="/permit-confirmation" component={PermitConfirmation} />

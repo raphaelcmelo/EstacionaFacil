@@ -187,13 +187,13 @@ export default function Register() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center text-gray-600">
-              <Link href="/login">
-                <a className="text-primary hover:underline">Já tem uma conta? Faça login</a>
+              <Link href="/login" className="text-primary hover:underline">
+                Já tem uma conta? Faça login
               </Link>
             </div>
             <div className="text-sm text-center text-gray-600">
-              <Link href="/">
-                <a className="text-gray-600 hover:underline">Voltar para a página inicial</a>
+              <Link href="/" className="text-gray-600 hover:underline">
+                Voltar para a página inicial
               </Link>
             </div>
           </CardFooter>

@@ -21,7 +21,7 @@ export default function Home() {
               <h1 className="text-2xl md:text-3xl font-bold text-white mb-4">Estacionamento Rotativo Municipal</h1>
               <p className="text-white opacity-90 mb-6">Estacione seu veículo em qualquer vaga rotativa da cidade de forma simples e rápida.</p>
               <div className="flex flex-wrap gap-3">
-                <Link href="/quick-buy">
+                <Link href="/purchase">
                   <Button className="bg-secondary hover:bg-secondary-light text-white font-semibold px-5 py-6 h-auto">
                     <i className="material-icons mr-2">add_circle</i>
                     Comprar Agora
@@ -107,8 +107,8 @@ export default function Home() {
             <div className="p-6">
               <h3 className="font-semibold text-lg mb-2">Usuários não cadastrados</h3>
               <p className="text-gray-600 mb-4">Não é necessário criar uma conta para usar o sistema. Compre sua permissão rapidamente.</p>
-              <Link href="/quick-buy">
-                <Button className="bg-primary hover:bg-primary-light text-white">Comprar sem cadastro</Button>
+              <Link href="/purchase">
+                <Button className="bg-primary hover:bg-primary-light text-white">Comprar agora</Button>
               </Link>
             </div>
           </div>
