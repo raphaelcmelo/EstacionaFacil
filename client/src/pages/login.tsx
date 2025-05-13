@@ -119,13 +119,13 @@ export default function Login() {
           </CardContent>
           <CardFooter className="flex flex-col space-y-4">
             <div className="text-sm text-center text-gray-600">
-              <Link href="/register">
-                <a className="text-primary hover:underline">Não tem uma conta? Cadastre-se</a>
+              <Link href="/register" className="text-primary hover:underline">
+                Não tem uma conta? Cadastre-se
               </Link>
             </div>
             <div className="text-sm text-center text-gray-600">
-              <Link href="/">
-                <a className="text-gray-600 hover:underline">Voltar para a página inicial</a>
+              <Link href="/" className="text-gray-600 hover:underline">
+                Voltar para a página inicial
               </Link>
             </div>
           </CardFooter>

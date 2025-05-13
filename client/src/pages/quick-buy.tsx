@@ -68,23 +68,6 @@ export default function QuickBuy() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permitData, setPermitData] = useState<any>(null);
   
-  // Get zones
-  const { data: zones, isLoading: isLoadingZones } = useQuery({
-    queryKey: ['/api/zones'],
-  });
-  
-  // Get user vehicles if logged in
-  const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery({
-    queryKey: ['/api/vehicles'],
-    enabled: !!user,
-  });
-  
-  // Get current price config for selected zone
-  const { data: priceConfig, isLoading: isLoadingPrices } = useQuery({
-    queryKey: ['/api/prices', selectedZoneId],
-    enabled: !!selectedZoneId,
-  });
-  
   // Form for quick buy
   const quickBuyForm = useForm<QuickBuyFormData>({
     resolver: zodResolver(quickBuySchema),
@@ -111,6 +94,23 @@ export default function QuickBuy() {
   // Get selected zone id from form
   const selectedZoneId = quickBuyForm.watch("zoneId");
   const selectedPaymentMethod = quickBuyForm.watch("paymentMethod");
+  
+  // Get zones
+  const { data: zones, isLoading: isLoadingZones } = useQuery({
+    queryKey: ['/api/zones'],
+  });
+  
+  // Get user vehicles if logged in
+  const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery({
+    queryKey: ['/api/vehicles'],
+    enabled: !!user,
+  });
+  
+  // Get current price config for selected zone
+  const { data: priceConfig, isLoading: isLoadingPrices } = useQuery({
+    queryKey: ['/api/prices', selectedZoneId],
+    enabled: !!selectedZoneId,
+  });
   
   // Set default zone if available
   useEffect(() => {
