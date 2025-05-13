@@ -169,7 +169,7 @@ export class DatabaseStorage implements IStorage {
         amount: "5.00",
         paymentStatus: PaymentStatus.COMPLETED,
         paymentMethod: PaymentMethod.CREDIT_CARD,
-        transactionId: "pay_123456",
+        paymentId: "pay_123456",
         transactionCode: generateTransactionCode(),
         notificationSent: false
       });
@@ -190,7 +190,7 @@ export class DatabaseStorage implements IStorage {
         amount: "3.00",
         paymentStatus: PaymentStatus.COMPLETED,
         paymentMethod: PaymentMethod.CREDIT_CARD,
-        transactionId: "pay_123457",
+        paymentId: "pay_123457",
         transactionCode: generateTransactionCode(),
         notificationSent: true
       });
@@ -207,10 +207,10 @@ export class DatabaseStorage implements IStorage {
         endTime: pastEndDate2,
         zoneId: orla.id,
         priceId: orlaPriceConfig.id,
-        totalPrice: "10.00",
+        amount: "10.00",
         paymentStatus: PaymentStatus.COMPLETED,
         paymentMethod: PaymentMethod.PIX,
-        transactionId: "pay_123458",
+        paymentId: "pay_123458",
         transactionCode: generateTransactionCode(),
         notificationSent: true
       });
@@ -572,7 +572,7 @@ export class DatabaseStorage implements IStorage {
     const todayStats = await db
       .select({
         count: sql<number>`count(*)`,
-        revenue: sql<number>`sum(cast(${parkingPermits.totalPrice} as decimal))`
+        revenue: sql<number>`sum(cast(${parkingPermits.amount} as decimal))`
       })
       .from(parkingPermits)
       .where(
@@ -586,7 +586,7 @@ export class DatabaseStorage implements IStorage {
     const yesterdayStats = await db
       .select({
         count: sql<number>`count(*)`,
-        revenue: sql<number>`sum(cast(${parkingPermits.totalPrice} as decimal))`
+        revenue: sql<number>`sum(cast(${parkingPermits.amount} as decimal))`
       })
       .from(parkingPermits)
       .where(
