@@ -756,4 +756,71 @@ export class MemStorage implements IStorage {
   }
 }
 
-export const storage = new MemStorage();
+import { DatabaseStorage } from './database-storage';
+import session from "express-session";
+
+// Update the IStorage interface to include sessionStore
+export interface IStorage {
+  // Include sessionStore for authentication
+  sessionStore: session.SessionStore;
+  
+  // User operations
+  getUser(id: number): Promise<User | undefined>;
+  getUserByEmail(email: string): Promise<User | undefined>;
+  createUser(user: InsertUser): Promise<User>;
+  updateUser(id: number, userData: Partial<InsertUser>): Promise<User | undefined>;
+  listUsers(): Promise<User[]>;
+  listUsersByRole(role: UserRole): Promise<User[]>;
+
+  // Vehicle operations
+  getVehicle(id: number): Promise<Vehicle | undefined>;
+  getVehicleByLicensePlate(licensePlate: string): Promise<Vehicle | undefined>;
+  createVehicle(vehicle: InsertVehicle): Promise<Vehicle>;
+  updateVehicle(id: number, vehicleData: Partial<InsertVehicle>): Promise<Vehicle | undefined>;
+  deleteVehicle(id: number): Promise<boolean>;
+  listVehiclesByUserId(userId: number): Promise<Vehicle[]>;
+
+  // Zone operations
+  getZone(id: number): Promise<Zone | undefined>;
+  createZone(zone: InsertZone): Promise<Zone>;
+  updateZone(id: number, zoneData: Partial<InsertZone>): Promise<Zone | undefined>;
+  listZones(): Promise<Zone[]>;
+  listActiveZones(): Promise<Zone[]>;
+
+  // Price config operations
+  getPriceConfig(id: number): Promise<PriceConfig | undefined>;
+  createPriceConfig(priceConfig: InsertPriceConfig): Promise<PriceConfig>;
+  updatePriceConfig(id: number, priceData: Partial<InsertPriceConfig>): Promise<PriceConfig | undefined>;
+  listPriceConfigsByZone(zoneId: number): Promise<PriceConfig[]>;
+  getCurrentPriceConfig(zoneId: number): Promise<PriceConfig | undefined>;
+
+  // Parking permit operations
+  getParkingPermit(id: number): Promise<ParkingPermit | undefined>;
+  getActiveParkingPermitByLicensePlate(licensePlate: string): Promise<(ParkingPermit & { vehicle: Vehicle, zone: Zone }) | undefined>;
+  createParkingPermit(permit: InsertParkingPermit): Promise<ParkingPermit>;
+  updateParkingPermit(id: number, permitData: Partial<InsertParkingPermit>): Promise<ParkingPermit | undefined>;
+  listParkingPermitsByUserId(userId: number): Promise<ParkingPermit[]>;
+  listActiveParkingPermitsByUserId(userId: number): Promise<(ParkingPermit & { vehicle: Vehicle, zone: Zone })[]>;
+  listParkingPermitHistory(userId: number, limit: number, offset: number): Promise<(ParkingPermit & { vehicle: Vehicle, zone: Zone })[]>;
+  getParkingPermitByTransactionCode(code: string): Promise<ParkingPermit | undefined>;
+
+  // Fiscal operations
+  createFiscalAction(action: InsertFiscalAction): Promise<FiscalAction>;
+  createVerification(verification: InsertVerification): Promise<Verification>;
+  createInfringement(infringement: InsertInfringement): Promise<Infringement>;
+  listFiscalActionsByFiscalId(fiscalId: number, limit: number): Promise<FiscalAction[]>;
+  listVerificationsByFiscalId(fiscalId: number, limit: number): Promise<Verification[]>;
+  
+  // Stats and dashboard
+  getPermitStats(): Promise<{
+    todayCount: number;
+    todayRevenue: number;
+    yesterdayCount: number;
+    yesterdayRevenue: number;
+  }>;
+  getZoneOccupancyStats(): Promise<{ zoneId: number; zoneName: string; occupancyRate: number }[]>;
+  getFiscalPerformanceStats(): Promise<{ fiscalId: number; fiscalName: string; verifications: number; performance: number }[]>;
+}
+
+// We're using the database storage now
+export const storage = new DatabaseStorage();
