@@ -1,0 +1,11 @@
+services:
+  backend-360:
+    build: .
+    container_name: backend-360
+    restart: always
+    environment:
+      - .env
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app

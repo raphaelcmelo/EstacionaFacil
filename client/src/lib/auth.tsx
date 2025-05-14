@@ -7,11 +7,8 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "@shared/schema";
-
 // Gere um ID único para esta instância do módulo para depuração
 const AUTH_MODULE_INSTANCE_ID = Math.random();
-console.log(`[DEBUG] auth.tsx module instance ID: ${AUTH_MODULE_INSTANCE_ID}`);
-
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
@@ -40,19 +37,10 @@ const AuthContext = createContext<AuthContextType>({
     );
   },
 });
-console.log(
-  `[DEBUG] AuthContext created in module ID: ${AUTH_MODULE_INSTANCE_ID}`,
-  AuthContext
-);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-
-  console.log(
-    `[DEBUG] AuthProvider from module ID: ${AUTH_MODULE_INSTANCE_ID} is rendering. Context it will use:`,
-    AuthContext
-  );
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -124,19 +112,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const value = { user, isLoading, login, register, logout };
-  console.log(
-    `[DEBUG] AuthProvider (module ID: ${AUTH_MODULE_INSTANCE_ID}) providing value:`,
-    value
-  );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
   // Adicione o ID do módulo ao log do useAuth também
-  console.log(
-    `[DEBUG] useAuth from module ID: ${AUTH_MODULE_INSTANCE_ID} called. Context it will use:`,
-    AuthContext
-  );
+
   return useContext(AuthContext);
 }

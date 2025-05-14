@@ -23,13 +23,13 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { LoadingSpinner } from "@/components/ui/spinner";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel, 
-  FormMessage 
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -37,18 +37,27 @@ import { zodResolver } from "@hookform/resolvers/zod";
 
 // Form schema
 const quickBuySchema = z.object({
-  licensePlate: z.string().min(7, "Placa deve ter no mínimo 7 caracteres").max(8, "Placa deve ter no máximo 8 caracteres"),
+  licensePlate: z
+    .string()
+    .min(7, "Placa deve ter no mínimo 7 caracteres")
+    .max(8, "Placa deve ter no máximo 8 caracteres"),
   model: z.string().min(2, "Modelo deve ter pelo menos 2 caracteres"),
   durationHours: z.number().min(1).max(12),
   zoneId: z.number().positive(),
-  paymentMethod: z.enum([PaymentMethod.CREDIT_CARD, PaymentMethod.DEBIT_CARD, PaymentMethod.PIX]),
+  paymentMethod: z.enum([
+    PaymentMethod.CREDIT_CARD,
+    PaymentMethod.DEBIT_CARD,
+    PaymentMethod.PIX,
+  ]),
 });
 
 type QuickBuyFormData = z.infer<typeof quickBuySchema>;
 
 // Credit card form schema
 const creditCardSchema = z.object({
-  cardNumber: z.string().min(16, "Número do cartão deve ter pelo menos 16 dígitos"),
+  cardNumber: z
+    .string()
+    .min(16, "Número do cartão deve ter pelo menos 16 dígitos"),
   cardExpiry: z.string().min(5, "Data de validade inválida"),
   cardCvv: z.string().min(3, "CVV inválido"),
   cardName: z.string().min(3, "Nome no cartão é obrigatório"),
@@ -60,14 +69,14 @@ export default function QuickBuy() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [location, navigate] = useLocation();
-  
+
   // State variables
   const [currentStep, setCurrentStep] = useState(1);
   const [selectedDuration, setSelectedDuration] = useState<number | null>(null);
   const [selectedHourPrice, setSelectedHourPrice] = useState<string>("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permitData, setPermitData] = useState<any>(null);
-  
+
   // Form for quick buy
   const quickBuyForm = useForm<QuickBuyFormData>({
     resolver: zodResolver(quickBuySchema),
@@ -79,7 +88,7 @@ export default function QuickBuy() {
       paymentMethod: PaymentMethod.CREDIT_CARD,
     },
   });
-  
+
   // Credit card form
   const creditCardForm = useForm<CreditCardFormData>({
     resolver: zodResolver(creditCardSchema),
@@ -90,35 +99,35 @@ export default function QuickBuy() {
       cardName: "",
     },
   });
-  
+
   // Get selected zone id from form
   const selectedZoneId = quickBuyForm.watch("zoneId");
   const selectedPaymentMethod = quickBuyForm.watch("paymentMethod");
-  
+
   // Get zones
   const { data: zones, isLoading: isLoadingZones } = useQuery({
-    queryKey: ['/api/zones'],
+    queryKey: ["/api/zones"],
   });
-  
+
   // Get user vehicles if logged in
   const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery({
-    queryKey: ['/api/vehicles'],
+    queryKey: ["/api/vehicles"],
     enabled: !!user,
   });
-  
+
   // Get current price config for selected zone
   const { data: priceConfig, isLoading: isLoadingPrices } = useQuery({
-    queryKey: ['/api/prices', selectedZoneId],
+    queryKey: ["/api/prices", selectedZoneId],
     enabled: !!selectedZoneId,
   });
-  
+
   // Set default zone if available
   useEffect(() => {
     if (zones && zones.length > 0 && !selectedZoneId) {
       quickBuyForm.setValue("zoneId", zones[0].id);
     }
   }, [zones]);
-  
+
   // Update price when duration or zone changes
   useEffect(() => {
     if (priceConfig && selectedDuration) {
@@ -150,7 +159,7 @@ export default function QuickBuy() {
       quickBuyForm.setValue("durationHours", selectedDuration);
     }
   }, [selectedDuration, priceConfig]);
-  
+
   // Purchase permit mutation
   const purchasePermitMutation = useMutation({
     mutationFn: async (data: QuickBuyFormData) => {
@@ -165,16 +174,18 @@ export default function QuickBuy() {
       setIsSubmitting(false);
       toast({
         title: "Erro na compra",
-        description: error.message || "Ocorreu um erro ao processar sua compra. Tente novamente.",
+        description:
+          error.message ||
+          "Ocorreu um erro ao processar sua compra. Tente novamente.",
         variant: "destructive",
       });
     },
   });
-  
+
   // Handle form submission
   const onSubmit = async (data: QuickBuyFormData) => {
     setIsSubmitting(true);
-    
+
     // If credit card selected, validate card details
     if (data.paymentMethod === PaymentMethod.CREDIT_CARD) {
       const creditCardValid = await creditCardForm.trigger();
@@ -183,31 +194,34 @@ export default function QuickBuy() {
         return;
       }
     }
-    
+
     purchasePermitMutation.mutate(data);
   };
-  
+
   // Calculate end time
   const getEndTime = () => {
     if (!selectedDuration) return "";
-    
+
     const now = new Date();
     const endTime = new Date(now.getTime() + selectedDuration * 60 * 60 * 1000);
-    
+
     return formatDateTime(endTime);
   };
-  
+
   if (isLoadingZones || isLoadingPrices || (user && isLoadingVehicles)) {
     return <LoadingSpinner />;
   }
-  
+
   return (
     <>
       <Helmet>
         <title>Comprar Permissão - EstacionaFácil</title>
-        <meta name="description" content="Compre uma permissão de estacionamento de forma rápida e simples." />
+        <meta
+          name="description"
+          content="Compre uma permissão de estacionamento de forma rápida e simples."
+        />
       </Helmet>
-      
+
       <Card className="max-w-2xl mx-auto">
         <CardHeader className="p-6 flex justify-between items-center">
           <CardTitle className="text-xl">Compra Rápida de Permissão</CardTitle>
@@ -215,7 +229,7 @@ export default function QuickBuy() {
             <i className="material-icons">close</i>
           </Button>
         </CardHeader>
-        
+
         <CardContent className="p-6">
           <Form {...quickBuyForm}>
             <form onSubmit={quickBuyForm.handleSubmit(onSubmit)}>
@@ -223,26 +237,33 @@ export default function QuickBuy() {
               <div className={currentStep === 1 ? "block" : "hidden"}>
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">1</div>
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">
+                      1
+                    </div>
                     <span className="font-semibold">Dados do Veículo</span>
                   </div>
                   <Separator className="flex-grow ml-4" />
                 </div>
-                
+
                 {user && userVehicles?.length > 0 && (
                   <div className="mb-6">
                     <Label className="block text-sm font-medium text-gray-700 mb-2">
                       Selecione um veículo cadastrado:
                     </Label>
-                    <Select 
+                    <Select
                       onValueChange={(value) => {
                         if (value === "new") {
                           quickBuyForm.setValue("licensePlate", "");
                           quickBuyForm.setValue("model", "");
                         } else {
-                          const vehicle = userVehicles.find((v: any) => v.id.toString() === value);
+                          const vehicle = userVehicles.find(
+                            (v: any) => v.id.toString() === value
+                          );
                           if (vehicle) {
-                            quickBuyForm.setValue("licensePlate", vehicle.licensePlate);
+                            quickBuyForm.setValue(
+                              "licensePlate",
+                              vehicle.licensePlate
+                            );
                             quickBuyForm.setValue("model", vehicle.model);
                           }
                         }
@@ -253,7 +274,10 @@ export default function QuickBuy() {
                       </SelectTrigger>
                       <SelectContent>
                         {userVehicles.map((vehicle: any) => (
-                          <SelectItem key={vehicle.id} value={vehicle.id.toString()}>
+                          <SelectItem
+                            key={vehicle.id}
+                            value={vehicle.id.toString()}
+                          >
                             {vehicle.licensePlate} - {vehicle.model}
                           </SelectItem>
                         ))}
@@ -262,7 +286,7 @@ export default function QuickBuy() {
                     </Select>
                   </div>
                 )}
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                   <FormField
                     control={quickBuyForm.control}
@@ -278,11 +302,13 @@ export default function QuickBuy() {
                           />
                         </FormControl>
                         <FormMessage />
-                        <p className="text-xs text-gray-500 mt-1">Formato: ABC1234 ou ABC1D23</p>
+                        <p className="text-xs text-gray-500 mt-1">
+                          Formato: ABC1234 ou ABC1D23
+                        </p>
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={quickBuyForm.control}
                     name="model"
@@ -297,15 +323,17 @@ export default function QuickBuy() {
                     )}
                   />
                 </div>
-                
+
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-2">2</div>
+                    <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-2">
+                      2
+                    </div>
                     <span className="text-gray-500">Tempo Desejado</span>
                   </div>
                   <Separator className="flex-grow ml-4" />
                 </div>
-                
+
                 <FormField
                   control={quickBuyForm.control}
                   name="zoneId"
@@ -315,14 +343,19 @@ export default function QuickBuy() {
                       <FormControl>
                         <Select
                           value={field.value.toString()}
-                          onValueChange={(value) => field.onChange(parseInt(value))}
+                          onValueChange={(value) =>
+                            field.onChange(parseInt(value))
+                          }
                         >
                           <SelectTrigger className="w-full">
                             <SelectValue placeholder="Selecione uma zona" />
                           </SelectTrigger>
                           <SelectContent>
                             {zones?.map((zone: any) => (
-                              <SelectItem key={zone.id} value={zone.id.toString()}>
+                              <SelectItem
+                                key={zone.id}
+                                value={zone.id.toString()}
+                              >
                                 {zone.name}
                               </SelectItem>
                             ))}
@@ -333,13 +366,17 @@ export default function QuickBuy() {
                     </FormItem>
                   )}
                 />
-                
+
                 <div className="flex justify-end">
                   <Button
                     type="button"
                     className="bg-primary hover:bg-primary-light text-white"
                     onClick={() => {
-                      const isValid = quickBuyForm.trigger(["licensePlate", "model", "zoneId"]);
+                      const isValid = quickBuyForm.trigger([
+                        "licensePlate",
+                        "model",
+                        "zoneId",
+                      ]);
                       if (isValid) {
                         setCurrentStep(2);
                       }
@@ -349,19 +386,23 @@ export default function QuickBuy() {
                   </Button>
                 </div>
               </div>
-              
+
               {/* Step 2: Duration */}
               <div className={currentStep === 2 ? "block" : "hidden"}>
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">2</div>
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">
+                      2
+                    </div>
                     <span className="font-semibold">Tempo Desejado</span>
                   </div>
                   <Separator className="flex-grow ml-4" />
                 </div>
-                
+
                 <div className="mb-6">
-                  <Label className="block text-sm font-medium text-gray-700 mb-2">Selecione a duração:</Label>
+                  <Label className="block text-sm font-medium text-gray-700 mb-2">
+                    Selecione a duração:
+                  </Label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
                     {priceConfig && (
                       <>
@@ -411,18 +452,22 @@ export default function QuickBuy() {
                     )}
                   </div>
                   {quickBuyForm.formState.errors.durationHours && (
-                    <p className="text-sm text-red-500 mt-1">Selecione uma duração</p>
+                    <p className="text-sm text-red-500 mt-1">
+                      Selecione uma duração
+                    </p>
                   )}
                 </div>
-                
+
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-2">3</div>
+                    <div className="w-8 h-8 rounded-full bg-gray-300 text-white flex items-center justify-center mr-2">
+                      3
+                    </div>
                     <span className="text-gray-500">Pagamento</span>
                   </div>
                   <Separator className="flex-grow ml-4" />
                 </div>
-                
+
                 <div className="flex justify-between space-x-3">
                   <Button
                     type="button"
@@ -432,8 +477,8 @@ export default function QuickBuy() {
                     Voltar
                   </Button>
                   <Button
+                    variant="default"
                     type="button"
-                    className="bg-primary hover:bg-primary-light text-white"
                     onClick={() => {
                       if (selectedDuration) {
                         setCurrentStep(3);
@@ -449,28 +494,33 @@ export default function QuickBuy() {
                   </Button>
                 </div>
               </div>
-              
+
               {/* Step 3: Payment */}
               <div className={currentStep === 3 ? "block" : "hidden"}>
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
-                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">3</div>
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center mr-2">
+                      3
+                    </div>
                     <span className="font-semibold">Pagamento</span>
                   </div>
                   <Separator className="flex-grow ml-4" />
                 </div>
-                
+
                 <div className="mb-6">
                   <div className="bg-gray-50 p-4 rounded-lg mb-4">
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-600">Duração:</span>
                       <span className="font-semibold">
-                        {selectedDuration} {selectedDuration === 1 ? "hora" : "horas"}
+                        {selectedDuration}{" "}
+                        {selectedDuration === 1 ? "hora" : "horas"}
                       </span>
                     </div>
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-600">Placa:</span>
-                      <span className="font-semibold">{quickBuyForm.getValues("licensePlate")}</span>
+                      <span className="font-semibold">
+                        {quickBuyForm.getValues("licensePlate")}
+                      </span>
                     </div>
                     <div className="flex justify-between mb-2">
                       <span className="text-gray-600">Validade:</span>
@@ -480,10 +530,12 @@ export default function QuickBuy() {
                     </div>
                     <div className="flex justify-between font-semibold text-lg border-t border-gray-300 pt-2 mt-2">
                       <span>Total:</span>
-                      <span className="text-secondary">{formatMoney(selectedHourPrice)}</span>
+                      <span className="text-secondary">
+                        {formatMoney(selectedHourPrice)}
+                      </span>
                     </div>
                   </div>
-                  
+
                   <FormField
                     control={quickBuyForm.control}
                     name="paymentMethod"
@@ -493,12 +545,21 @@ export default function QuickBuy() {
                         <FormControl>
                           <RadioGroup
                             value={field.value}
-                            onValueChange={(value: any) => field.onChange(value)}
+                            onValueChange={(value: any) =>
+                              field.onChange(value)
+                            }
                             className="space-y-2"
                           >
                             <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
-                              <RadioGroupItem value={PaymentMethod.CREDIT_CARD} id="credit-card" className="mr-3" />
-                              <Label htmlFor="credit-card" className="flex-grow cursor-pointer">
+                              <RadioGroupItem
+                                value={PaymentMethod.CREDIT_CARD}
+                                id="credit-card"
+                                className="mr-3"
+                              />
+                              <Label
+                                htmlFor="credit-card"
+                                className="flex-grow cursor-pointer"
+                              >
                                 Cartão de Crédito
                               </Label>
                               <div className="flex space-x-1">
@@ -508,11 +569,20 @@ export default function QuickBuy() {
                               </div>
                             </div>
                             <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
-                              <RadioGroupItem value={PaymentMethod.PIX} id="pix" className="mr-3" />
-                              <Label htmlFor="pix" className="flex-grow cursor-pointer">
+                              <RadioGroupItem
+                                value={PaymentMethod.PIX}
+                                id="pix"
+                                className="mr-3"
+                              />
+                              <Label
+                                htmlFor="pix"
+                                className="flex-grow cursor-pointer"
+                              >
                                 PIX
                               </Label>
-                              <span className="inline-block w-8 h-5 bg-green-500 rounded flex items-center justify-center text-white text-xs font-bold">PIX</span>
+                              <span className="inline-block w-8 h-5 bg-green-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                                PIX
+                              </span>
                             </div>
                           </RadioGroup>
                         </FormControl>
@@ -520,7 +590,7 @@ export default function QuickBuy() {
                       </FormItem>
                     )}
                   />
-                  
+
                   {selectedPaymentMethod === PaymentMethod.CREDIT_CARD && (
                     <div className="border border-gray-300 rounded-lg p-4">
                       <Form {...creditCardForm}>
@@ -532,13 +602,16 @@ export default function QuickBuy() {
                               <FormItem>
                                 <FormLabel>Número do Cartão</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="1234 5678 9012 3456" {...field} />
+                                  <Input
+                                    placeholder="1234 5678 9012 3456"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
-                          
+
                           <div className="grid grid-cols-2 gap-4">
                             <FormField
                               control={creditCardForm.control}
@@ -553,7 +626,7 @@ export default function QuickBuy() {
                                 </FormItem>
                               )}
                             />
-                            
+
                             <FormField
                               control={creditCardForm.control}
                               name="cardCvv"
@@ -568,7 +641,7 @@ export default function QuickBuy() {
                               )}
                             />
                           </div>
-                          
+
                           <FormField
                             control={creditCardForm.control}
                             name="cardName"
@@ -576,7 +649,10 @@ export default function QuickBuy() {
                               <FormItem>
                                 <FormLabel>Nome no Cartão</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="NOME COMO ESTÁ NO CARTÃO" {...field} />
+                                  <Input
+                                    placeholder="NOME COMO ESTÁ NO CARTÃO"
+                                    {...field}
+                                  />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -586,20 +662,26 @@ export default function QuickBuy() {
                       </Form>
                     </div>
                   )}
-                  
+
                   {selectedPaymentMethod === PaymentMethod.PIX && (
                     <div className="border border-gray-300 rounded-lg p-4 text-center">
                       <div className="mb-4">
-                        <i className="material-icons text-5xl text-green-600 mb-2">qr_code_2</i>
-                        <p className="text-gray-700 mb-2">Utilize o QR Code ou código PIX abaixo para realizar o pagamento</p>
+                        <i className="material-icons text-5xl text-green-600 mb-2">
+                          qr_code_2
+                        </i>
+                        <p className="text-gray-700 mb-2">
+                          Utilize o QR Code ou código PIX abaixo para realizar o
+                          pagamento
+                        </p>
                         <div className="bg-gray-200 p-4 rounded text-xs font-mono break-all">
-                          00020126360014BR.GOV.BCB.PIX0114+55279999999995204000053039865802BR5924PREFEITURA MUNICIPAL DE XYZ6009SAO PAULO62070503***6304E2CA
+                          00020126360014BR.GOV.BCB.PIX0114+55279999999995204000053039865802BR5924PREFEITURA
+                          MUNICIPAL DE XYZ6009SAO PAULO62070503***6304E2CA
                         </div>
                       </div>
                     </div>
                   )}
                 </div>
-                
+
                 <div className="flex justify-between space-x-3">
                   <Button
                     type="button"
