@@ -11,14 +11,17 @@ const verifyCallback =
     if (err || info || !user) {
       return reject(new ApiError(status.UNAUTHORIZED, "Please authenticate"));
     }
+    console.log("user", user);
     req.user = user;
 
     if (requiredRights.length) {
       const userRights: any = roleRights.get(user.role);
+      console.log(userRights);
       const hasRequiredRights = requiredRights.every((requiredRight: any) =>
         userRights.includes(requiredRight)
       );
-      if (!hasRequiredRights || req.params.userId !== user.id) {
+
+      if (!hasRequiredRights && req.params.userId !== user.id) {
         return reject(new ApiError(status.FORBIDDEN, "Forbidden"));
       }
     }

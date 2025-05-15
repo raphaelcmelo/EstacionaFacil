@@ -1,12 +1,12 @@
 import { Router } from "express";
-import pontoRoutes from "./ponto.route";
+import veiculoRoutes from "./veiculo.route";
 
 const estacionaFacilRoutes = Router();
 
 const defaultRoutes = [
   {
-    path: "/register",
-    route: pontoRoutes,
+    path: "/veiculo",
+    route: veiculoRoutes,
   },
 ];
 

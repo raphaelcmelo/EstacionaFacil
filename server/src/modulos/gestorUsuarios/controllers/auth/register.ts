@@ -16,6 +16,7 @@ const generateAuthTokensUseCase = new GenerateAuthTokensUseCase(
 
 export const authRegister = catchAsync(
   async (req: Request, res: Response): Promise<void> => {
+    console.log(req.body);
     const user = await createUserUseCase.execute(req.body);
     const tokens = await generateAuthTokensUseCase.execute(user);
     res.status(status.CREATED).send({ user, tokens });

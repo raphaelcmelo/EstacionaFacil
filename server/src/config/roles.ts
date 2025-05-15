@@ -1,8 +1,8 @@
 const allRoles = {
-  servidor: ["getServidor"],
-  cidadao: [],
-  managerPontoEletr: ["manageUsers"],
-  admin: ["manageUsers", "getUsers"],
+  servidor: ["getServidor", "me"],
+  CITIZEN: ["me"],
+  managerPontoEletr: ["manageUsers", "me"],
+  admin: ["manageUsers", "getUsers", "me"],
 };
 
 export const roles = Object.keys(allRoles);

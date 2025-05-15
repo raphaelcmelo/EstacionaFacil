@@ -1,15 +1,18 @@
 import mongoose, { HydratedDocument, InferSchemaType } from "mongoose";
 
-const pontoSchema = new mongoose.Schema(
+const veiculoSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.SchemaTypes.ObjectId,
       ref: "User",
       required: true,
     },
-    location: {
-      type: { type: String },
-      coordinates: [],
+    placa: {
+      type: String,
+      required: true,
+    },
+    modelo: {
+      type: String,
     },
     createdAt: {
       type: Date,
@@ -31,11 +34,11 @@ const pontoSchema = new mongoose.Schema(
   }
 );
 
-pontoSchema.pre("save", async function (done) {
+veiculoSchema.pre("save", async function (done) {
   this.set("updatedAt", new Date());
   done();
 });
 
-export type Ponto = HydratedDocument<InferSchemaType<typeof pontoSchema>>;
+export type Veiculo = HydratedDocument<InferSchemaType<typeof veiculoSchema>>;
 
-export const PontoModel = mongoose.model("Ponto", pontoSchema);
+export const VeiculoModel = mongoose.model("Veiculo", veiculoSchema);
