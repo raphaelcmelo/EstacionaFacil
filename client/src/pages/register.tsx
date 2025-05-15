@@ -17,19 +17,34 @@ import { Helmet } from "react-helmet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
+import { cpf as cpfValidator } from "cpf-cnpj-validator";
 
-const formSchema = z.object({
-  name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("E-mail inválido"),
-  cpf: z.string().optional(),
-  phone: z.string().optional(),
-  password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
-  confirmPassword: z.string()
-}).refine(data => data.password === data.confirmPassword, {
-  message: "As senhas não coincidem",
-  path: ["confirmPassword"]
-});
+const formSchema = z
+  .object({
+    name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
+    email: z.string().email("E-mail inválido"),
+    cpf: z
+      .string()
+      .min(1)
+      .refine((value) => !value || cpfValidator.isValid(value), {
+        message: "CPF inválido",
+      }),
+    phone: z.string().optional(),
+    password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "As senhas não coincidem",
+    path: ["confirmPassword"],
+  });
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -38,7 +53,7 @@ export default function Register() {
   const [, navigate] = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  
+
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -68,13 +83,18 @@ export default function Register() {
     <>
       <Helmet>
         <title>Cadastro - EstacionaFácil</title>
-        <meta name="description" content="Crie sua conta para gerenciar permissões de estacionamento, veículos e histórico." />
+        <meta
+          name="description"
+          content="Crie sua conta para gerenciar permissões de estacionamento, veículos e histórico."
+        />
       </Helmet>
-      
+
       <div className="flex justify-center items-center py-8">
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
-            <CardTitle className="text-2xl font-bold text-center">Criar Conta</CardTitle>
+            <CardTitle className="text-2xl font-bold text-center">
+              Criar Conta
+            </CardTitle>
             <CardDescription className="text-center">
               Preencha os dados abaixo para criar sua conta
             </CardDescription>
@@ -86,52 +106,39 @@ export default function Register() {
                 <AlertDescription>{error}</AlertDescription>
               </Alert>
             )}
-            
+
             <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Nome completo</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Seu nome completo" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>E-mail</FormLabel>
-                      <FormControl>
-                        <Input placeholder="seu@email.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
+              <form
+                onSubmit={form.handleSubmit(onSubmit)}
+                className="space-y-4"
+              >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <FormField
                     control={form.control}
                     name="cpf"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>CPF (opcional)</FormLabel>
+                        <FormLabel>CPF*</FormLabel>
                         <FormControl>
-                          <Input placeholder="123.456.789-00" {...field} />
+                          <Input
+                            placeholder="***.***.***-**"
+                            {...field}
+                            onChange={(e) => {
+                              const numericValue = e.target.value.replace(
+                                /\D/g,
+                                ""
+                              );
+                              field.onChange(numericValue);
+                            }}
+                            maxLength={11}
+                            autoComplete="off"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
-                  
+
                   <FormField
                     control={form.control}
                     name="phone"
@@ -146,7 +153,34 @@ export default function Register() {
                     )}
                   />
                 </div>
-                
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Nome completo</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Seu nome completo" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>E-mail</FormLabel>
+                      <FormControl>
+                        <Input placeholder="seu@email.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
                 <FormField
                   control={form.control}
                   name="password"
@@ -160,7 +194,7 @@ export default function Register() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={form.control}
                   name="confirmPassword"
@@ -174,10 +208,10 @@ export default function Register() {
                     </FormItem>
                   )}
                 />
-                
-                <Button 
-                  type="submit" 
-                  className="w-full bg-primary hover:bg-primary-light" 
+
+                <Button
+                  type="submit"
+                  className="w-full bg-primary hover:bg-primary-light"
                   disabled={isLoading}
                 >
                   {isLoading ? "Criando conta..." : "Criar conta"}

@@ -26,9 +26,15 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { cpf as cpfValidator } from "cpf-cnpj-validator";
 
 const formSchema = z.object({
-  email: z.string().email("E-mail inválido").min(1, "E-mail é obrigatório"),
+  cpf: z
+    .string()
+    .min(1)
+    .refine((value) => !value || cpfValidator.isValid(value), {
+      message: "CPF inválido",
+    }),
   password: z.string().min(1, "Senha é obrigatória"),
 });
 
@@ -36,7 +42,6 @@ type FormData = z.infer<typeof formSchema>;
 
 export default function Login() {
   const authContextValue = useAuth();
-  console.log("AuthContext Value in Login:", authContextValue);
   const { login } = authContextValue;
   const [, navigate] = useLocation();
   const [error, setError] = useState<string | null>(null);
@@ -45,7 +50,7 @@ export default function Login() {
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      email: "",
+      cpf: "",
       password: "",
     },
   });
@@ -54,7 +59,7 @@ export default function Login() {
     try {
       setError(null);
       setIsLoading(true);
-      await login(data.email, data.password);
+      await login(data.cpf, data.password);
       navigate("/dashboard");
     } catch (err: any) {
       setError(
@@ -100,12 +105,12 @@ export default function Login() {
               >
                 <FormField
                   control={form.control}
-                  name="email"
+                  name="cpf"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>E-mail</FormLabel>
+                      <FormLabel>CPF</FormLabel>
                       <FormControl>
-                        <Input placeholder="seu@email.com" {...field} />
+                        <Input placeholder="Insira seu CPF" {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -119,7 +124,11 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input
+                          type="password"
+                          placeholder="Deve conter pelo menos 8 dígitos e pelo menos uma letra maiúscula"
+                          {...field}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
