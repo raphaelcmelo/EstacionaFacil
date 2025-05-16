@@ -40,13 +40,25 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useLocation } from "wouter";
 
-// Form schema for creating/editing a vehicle
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 const vehicleSchema = z.object({
-  licensePlate: z
+  placa: z
     .string()
-    .min(7, "Placa deve ter no mínimo 7 caracteres")
-    .max(8, "Placa deve ter no máximo 8 caracteres"),
-  model: z.string().min(2, "Modelo deve ter pelo menos 2 caracteres"),
+    .transform((val) => val.toUpperCase().replace(/[^A-Z0-9]/g, ""))
+    .refine(
+      (val) =>
+        /^[A-Z]{3}[0-9]{4}$/.test(val) || // Padrão antigo: ABC1234
+        /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(val), // Padrão Mercosul: ABC1D23
+      {
+        message: "Placa inválida. Use o formato ABC-1234 ou ABC1D23.",
+      }
+    )
+    .refine((val) => val.length === 7, {
+      message:
+        "Placa deve ter exatamente 7 caracteres (ex: ABC1234 ou ABC1D23).",
+    }),
+  modelo: z.string().min(2, "Modelo deve ter pelo menos 2 caracteres"),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -76,25 +88,34 @@ export default function UserVehicles() {
   const addForm = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      licensePlate: "",
-      model: "",
+      placa: "",
+      modelo: "",
     },
   });
 
   const editForm = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: {
-      licensePlate: "",
-      model: "",
+      placa: "",
+      modelo: "",
     },
   });
 
   // Mutations
   const addVehicleMutation = useMutation({
     mutationFn: async (data: VehicleFormData) => {
-      return await apiRequest("POST", "/api/vehicles", data);
+      const payload = {
+        ...data,
+        userId: user?.id,
+      };
+      return await apiRequest(
+        "POST",
+        `${baseUrl}/v1/estaciona-facil/veiculo/criar`,
+        payload
+      );
     },
     onSuccess: () => {
+      console.log("veiculo adicionado");
       queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
       toast({
         title: "Veículo adicionado",
@@ -163,8 +184,8 @@ export default function UserVehicles() {
   // Handle opening the edit dialog
   const handleEditVehicle = (vehicle: any) => {
     editForm.reset({
-      licensePlate: vehicle.licensePlate,
-      model: vehicle.model,
+      placa: vehicle.licensePlate,
+      modelo: vehicle.model,
     });
     setSelectedVehicle(vehicle);
     setIsEditDialogOpen(true);
@@ -307,7 +328,7 @@ export default function UserVehicles() {
             >
               <FormField
                 control={addForm.control}
-                name="licensePlate"
+                name="placa"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Placa do Veículo</FormLabel>
@@ -328,7 +349,7 @@ export default function UserVehicles() {
 
               <FormField
                 control={addForm.control}
-                name="model"
+                name="modelo"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Modelo do Veículo</FormLabel>
