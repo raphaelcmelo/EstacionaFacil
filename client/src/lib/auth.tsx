@@ -7,6 +7,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "@shared/schema";
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
 // Gere um ID único para esta instância do módulo para depuração
 const AUTH_MODULE_INSTANCE_ID = Math.random();
 interface AuthContextType {
@@ -45,7 +46,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const res = await fetch("/api/auth/me", {
+        const res = await fetch(`${baseUrl}/v1/gestor-usuarios/auth/me`, {
           credentials: "include",
         });
         if (res.ok) {
@@ -83,7 +84,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const register = async (userData: any): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/register", {
+      const res = await fetch(`${baseUrl}/v1/gestor-usuarios/auth/register`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(userData),

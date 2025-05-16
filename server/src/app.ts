@@ -36,7 +36,12 @@ app.use(express.urlencoded({ extended: true }));
 app.use(compression());
 
 // enable cors
-app.use(cors());
+app.use(
+  cors({
+    origin: env.FRONTEND_ORIGIN,
+    credentials: true,
+  })
+);
 
 // jwt authentication
 app.use(passport.initialize());

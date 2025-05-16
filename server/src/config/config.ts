@@ -22,6 +22,8 @@ const envSchema = z.object({
     .string()
     .default("10")
     .describe("minutes after which verify email token expires"),
+
+  FRONTEND_ORIGIN: z.string().url().min(1).describe("Frontend origin URL"),
 });
 
 const _env = envSchema.safeParse(process.env);
