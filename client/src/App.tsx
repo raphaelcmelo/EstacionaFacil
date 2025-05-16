@@ -23,7 +23,7 @@ import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
 import AdminZones from "@/pages/admin/zones";
 import AdminPrices from "@/pages/admin/prices";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/context/auth";
 import { Suspense, lazy } from "react";
 import { LoadingSpinner } from "@/components/ui/spinner";
 
@@ -45,7 +45,7 @@ function ProtectedRoute({
     return <Login />;
   }
 
-  if (roles.length > 0 && !roles.includes(user.role)) {
+  if (!roles.includes(user.role)) {
     return <NotFound />;
   }
 

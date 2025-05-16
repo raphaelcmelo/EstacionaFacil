@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/context/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -10,67 +10,74 @@ import { Helmet } from "react-helmet";
 
 export default function UserDashboard() {
   const { user } = useAuth();
-  
+
   // Get active parking permits
   const { data: activePermits, isLoading: isLoadingPermits } = useQuery({
-    queryKey: ['/api/permits/active'],
+    queryKey: ["/api/permits/active"],
     enabled: !!user,
   });
-  
+
   // Get user vehicles
   const { data: vehicles, isLoading: isLoadingVehicles } = useQuery({
-    queryKey: ['/api/vehicles'],
+    queryKey: ["/api/vehicles"],
     enabled: !!user,
   });
-  
+
   // Get permit history for the stats
   const { data: permitHistory, isLoading: isLoadingHistory } = useQuery({
-    queryKey: ['/api/permits/history', { limit: 10, offset: 0 }],
+    queryKey: ["/api/permits/history", { limit: 10, offset: 0 }],
     enabled: !!user,
   });
-  
+
   // State for time remaining counters
-  const [timeRemaining, setTimeRemaining] = useState<{[key: number]: string}>({});
-  
+  const [timeRemaining, setTimeRemaining] = useState<{ [key: number]: string }>(
+    {}
+  );
+
   // Update time remaining every second
   useEffect(() => {
     if (!activePermits) return;
-    
+
     const updateTimeRemaining = () => {
-      const newTimeRemaining: {[key: number]: string} = {};
-      
+      const newTimeRemaining: { [key: number]: string } = {};
+
       activePermits.forEach((permit: any) => {
         newTimeRemaining[permit.id] = formatTimeRemaining(permit.endTime);
       });
-      
+
       setTimeRemaining(newTimeRemaining);
     };
-    
+
     updateTimeRemaining();
     const intervalId = setInterval(updateTimeRemaining, 1000);
-    
+
     return () => clearInterval(intervalId);
   }, [activePermits]);
-  
+
   // Calculate stats
   const purchasesThisMonth = permitHistory?.length || 0;
-  
+
   // Calculate savings (mock calculation - in reality would depend on business rules)
-  const savingsThisMonth = purchasesThisMonth > 3 ? 8.50 : 0;
-  
+  const savingsThisMonth = purchasesThisMonth > 3 ? 8.5 : 0;
+
   if (isLoadingPermits || isLoadingVehicles || isLoadingHistory) {
     return <LoadingSpinner />;
   }
-  
+
   return (
     <>
       <Helmet>
         <title>Meu Painel - EstacionaFácil</title>
-        <meta name="description" content="Gerencie suas permissões de estacionamento, visualize suas permissões ativas e acesse seu histórico." />
+        <meta
+          name="description"
+          content="Gerencie suas permissões de estacionamento, visualize suas permissões ativas e acesse seu histórico."
+        />
       </Helmet>
-      
+
       <div className="mb-6">
-        <h2 className="text-2xl font-bold mb-4">Olá, {user?.name?.split(' ')[0]}!</h2>
+        <h2 className="text-2xl font-bold mb-4">
+          Olá, {user?.name?.split(" ")[0]}!
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <Card>
             <CardContent className="p-4">
@@ -80,7 +87,9 @@ export default function UserDashboard() {
                   <i className="material-icons text-green-600">timer</i>
                 </div>
               </div>
-              <p className="text-2xl font-semibold">{activePermits?.length || 0}</p>
+              <p className="text-2xl font-semibold">
+                {activePermits?.length || 0}
+              </p>
             </CardContent>
           </Card>
           <Card>
@@ -113,7 +122,9 @@ export default function UserDashboard() {
                   <i className="material-icons text-yellow-600">savings</i>
                 </div>
               </div>
-              <p className="text-2xl font-semibold">{formatMoney(savingsThisMonth)}</p>
+              <p className="text-2xl font-semibold">
+                {formatMoney(savingsThisMonth)}
+              </p>
             </CardContent>
           </Card>
         </div>
@@ -130,10 +141,16 @@ export default function UserDashboard() {
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
                   <div className="mb-2 md:mb-0">
                     <div className="flex items-center">
-                      <i className="material-icons text-green-600 mr-2">directions_car</i>
-                      <span className="font-semibold">{permit.vehicle.licensePlate} • {permit.vehicle.model}</span>
+                      <i className="material-icons text-green-600 mr-2">
+                        directions_car
+                      </i>
+                      <span className="font-semibold">
+                        {permit.vehicle.licensePlate} • {permit.vehicle.model}
+                      </span>
                     </div>
-                    <div className="text-gray-600 text-sm mt-1">{permit.zone.name}</div>
+                    <div className="text-gray-600 text-sm mt-1">
+                      {permit.zone.name}
+                    </div>
                   </div>
                   <div className="bg-green-100 px-3 py-1 rounded-full text-green-800 text-sm font-medium flex items-center self-start md:self-center">
                     <i className="material-icons text-xs mr-1">check_circle</i>
@@ -143,15 +160,22 @@ export default function UserDashboard() {
                 <div className="flex flex-col md:flex-row justify-between md:items-center">
                   <div>
                     <div className="text-sm text-gray-600">Válida até:</div>
-                    <div className="font-semibold">{formatDateTime(permit.endTime)}</div>
+                    <div className="font-semibold">
+                      {formatDateTime(permit.endTime)}
+                    </div>
                   </div>
                   <div className="mt-2 md:mt-0">
                     <div className="text-sm text-gray-600">Tempo restante:</div>
-                    <div className="font-semibold text-lg text-primary">{timeRemaining[permit.id] || formatTimeRemaining(permit.endTime)}</div>
+                    <div className="font-semibold text-lg text-primary">
+                      {timeRemaining[permit.id] ||
+                        formatTimeRemaining(permit.endTime)}
+                    </div>
                   </div>
                   <div className="mt-3 md:mt-0">
                     <Link href="/quick-buy">
-                      <Button className="bg-secondary hover:bg-secondary-light text-white">Estender</Button>
+                      <Button className="bg-secondary hover:bg-secondary-light text-white">
+                        Estender
+                      </Button>
                     </Link>
                   </div>
                 </div>
@@ -160,12 +184,18 @@ export default function UserDashboard() {
           ) : (
             <div className="text-center py-8">
               <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
-                <i className="material-icons text-gray-400 text-2xl">timer_off</i>
+                <i className="material-icons text-gray-400 text-2xl">
+                  timer_off
+                </i>
               </div>
-              <h3 className="font-semibold text-lg mb-2">Nenhuma permissão ativa</h3>
-              <p className="text-gray-600 mb-4">Você não possui permissões de estacionamento ativas no momento.</p>
+              <h3 className="font-semibold text-lg mb-2">
+                Nenhuma permissão ativa
+              </h3>
+              <p className="text-gray-600 mb-4">
+                Você não possui permissões de estacionamento ativas no momento.
+              </p>
               <Link href="/quick-buy">
-                <Button className="bg-secondary hover:bg-secondary-light text-white">Comprar Permissão</Button>
+                <Button variant="secondary">Comprar Permissão</Button>
               </Link>
             </div>
           )}
@@ -176,7 +206,7 @@ export default function UserDashboard() {
         <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
           <CardTitle className="text-lg">Meus Veículos</CardTitle>
           <Link href="/vehicles">
-            <Button className="bg-primary hover:bg-primary-light text-white" size="sm">
+            <Button variant="default" size="sm">
               <i className="material-icons text-sm mr-1">add</i>
               Adicionar
             </Button>
@@ -186,15 +216,26 @@ export default function UserDashboard() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {vehicles?.length > 0 ? (
               vehicles.map((vehicle: any) => (
-                <div key={vehicle.id} className="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors">
+                <div
+                  key={vehicle.id}
+                  className="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors"
+                >
                   <div className="flex justify-between items-start mb-3">
                     <div className="flex items-center">
-                      <i className="material-icons text-primary mr-2">directions_car</i>
-                      <span className="font-semibold">{vehicle.licensePlate}</span>
+                      <i className="material-icons text-primary mr-2">
+                        directions_car
+                      </i>
+                      <span className="font-semibold">
+                        {vehicle.licensePlate}
+                      </span>
                     </div>
                     <div className="flex space-x-2">
                       <Link href={`/vehicles?edit=${vehicle.id}`}>
-                        <Button variant="ghost" size="icon" className="h-6 w-6 text-gray-500 hover:text-primary">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6 text-gray-500 hover:text-primary"
+                        >
                           <i className="material-icons text-sm">edit</i>
                         </Button>
                       </Link>
@@ -205,9 +246,11 @@ export default function UserDashboard() {
               ))
             ) : (
               <div className="col-span-2 text-center py-6">
-                <p className="text-gray-600">Você não possui veículos cadastrados.</p>
+                <p className="text-gray-600">
+                  Você não possui veículos cadastrados.
+                </p>
                 <Link href="/vehicles">
-                  <Button className="mt-2 bg-primary hover:bg-primary-light text-white">Cadastrar Veículo</Button>
+                  <Button variant="default">Cadastrar Veículo</Button>
                 </Link>
               </div>
             )}
@@ -219,7 +262,11 @@ export default function UserDashboard() {
         <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
           <CardTitle className="text-lg">Histórico de Permissões</CardTitle>
           <Link href="/history">
-            <Button variant="outline" size="sm" className="border-gray-300 text-gray-700 hover:bg-gray-100">
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-300 text-gray-700 hover:bg-gray-100"
+            >
               <i className="material-icons text-sm mr-1">filter_list</i>
               Ver Tudo
             </Button>
@@ -229,12 +276,24 @@ export default function UserDashboard() {
           <table className="min-w-full">
             <thead>
               <tr className="bg-gray-50">
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Veículo</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Data</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Duração</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Zona</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Veículo
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Data
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Duração
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Zona
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Valor
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Ações
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
@@ -243,15 +302,20 @@ export default function UserDashboard() {
                   <tr key={history.id}>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center">
-                        <span className="font-medium">{history.vehicle.licensePlate}</span>
-                        <span className="text-gray-500 ml-2">{history.vehicle.model}</span>
+                        <span className="font-medium">
+                          {history.vehicle.licensePlate}
+                        </span>
+                        <span className="text-gray-500 ml-2">
+                          {history.vehicle.model}
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       {new Date(history.startTime).toLocaleDateString()}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {history.durationHours} {history.durationHours === 1 ? 'hora' : 'horas'}
+                      {history.durationHours}{" "}
+                      {history.durationHours === 1 ? "hora" : "horas"}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       {history.zone.name}
@@ -260,7 +324,11 @@ export default function UserDashboard() {
                       {formatMoney(history.amount)}
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      <Button variant="ghost" size="icon" className="h-6 w-6 text-primary hover:text-primary-dark">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-6 w-6 text-primary hover:text-primary-dark"
+                      >
                         <i className="material-icons text-sm">receipt</i>
                       </Button>
                     </td>
@@ -268,7 +336,10 @@ export default function UserDashboard() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                  <td
+                    colSpan={6}
+                    className="px-4 py-6 text-center text-gray-500"
+                  >
                     Nenhuma permissão encontrada no histórico.
                   </td>
                 </tr>

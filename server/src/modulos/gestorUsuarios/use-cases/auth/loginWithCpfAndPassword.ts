@@ -10,12 +10,12 @@ export class LoginWithCpfAndPassword {
   async execute(cpf: string, password: string) {
     const userByCpf = await this.userRepository.findByCpf(cpf);
     if (!userByCpf) {
-      throw new ApiError(status.UNAUTHORIZED, "Incorrect email or password");
+      throw new ApiError(status.UNAUTHORIZED, "Email ou senha incorretos");
     }
 
     const passwordsMatch = await Password.compare(userByCpf.password, password);
     if (!passwordsMatch) {
-      throw new ApiError(status.UNAUTHORIZED, "Incorrect email or password");
+      throw new ApiError(status.UNAUTHORIZED, "Email ou senha incorretos");
     }
 
     return userByCpf;

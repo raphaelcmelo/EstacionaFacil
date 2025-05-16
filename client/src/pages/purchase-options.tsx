@@ -1,9 +1,16 @@
 import { useEffect } from "react";
 import { useLocation } from "wouter";
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/context/auth";
 import { Helmet } from "react-helmet";
 import { LoadingSpinner } from "@/components/ui/spinner";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+  CardFooter,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 
@@ -26,13 +33,21 @@ export default function PurchaseOptions() {
     <>
       <Helmet>
         <title>Opções de Compra - EstacionaFácil</title>
-        <meta name="description" content="Escolha como deseja comprar sua permissão de estacionamento." />
+        <meta
+          name="description"
+          content="Escolha como deseja comprar sua permissão de estacionamento."
+        />
       </Helmet>
 
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">Escolha como deseja continuar</h1>
-          <p className="text-gray-600">Você pode comprar uma permissão de estacionamento com ou sem criar uma conta.</p>
+          <h1 className="text-3xl font-bold mb-2">
+            Escolha como deseja continuar
+          </h1>
+          <p className="text-gray-600">
+            Você pode comprar uma permissão de estacionamento com ou sem criar
+            uma conta.
+          </p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -68,10 +83,7 @@ export default function PurchaseOptions() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button 
-                className="w-full" 
-                onClick={() => navigate("/quick-buy")}
-              >
+              <Button className="w-full" onClick={() => navigate("/quick-buy")}>
                 Comprar sem cadastro
               </Button>
             </CardFooter>
@@ -109,8 +121,8 @@ export default function PurchaseOptions() {
               </ul>
             </CardContent>
             <CardFooter className="space-y-3 block">
-              <Button 
-                className="w-full mb-2" 
+              <Button
+                className="w-full mb-2"
                 onClick={() => navigate("/login?next=/quick-buy")}
               >
                 Entrar na minha conta
@@ -118,7 +130,10 @@ export default function PurchaseOptions() {
               <div className="text-center">
                 <span className="text-gray-500 text-sm">
                   Novo por aqui?{" "}
-                  <Link href="/register?next=/quick-buy" className="text-primary hover:underline">
+                  <Link
+                    href="/register?next=/quick-buy"
+                    className="text-primary hover:underline"
+                  >
                     Criar conta
                   </Link>
                 </span>

@@ -1,4 +1,4 @@
-import { useAuth } from "@/lib/auth";
+import { useAuth } from "@/context/auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -11,7 +11,14 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
@@ -38,7 +45,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { CheckCircle, AlertCircle, User, Shield, Award, UserCog } from "lucide-react";
+import {
+  CheckCircle,
+  AlertCircle,
+  User,
+  Shield,
+  Award,
+  UserCog,
+} from "lucide-react";
 import { UserRole } from "@shared/schema";
 
 // Form schema for adding/editing users
@@ -59,19 +73,19 @@ type UserFormData = z.infer<typeof userFormSchema>;
 export default function AdminUsers() {
   const { user } = useAuth();
   const { toast } = useToast();
-  
+
   // States for dialogs
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
-  
+
   // Get users list
   const { data: users, isLoading } = useQuery({
-    queryKey: ['/api/admin/users'],
+    queryKey: ["/api/admin/users"],
     enabled: !!user && user.role === "ADMIN",
   });
-  
+
   // Forms
   const addForm = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema),
@@ -87,7 +101,7 @@ export default function AdminUsers() {
       active: true,
     },
   });
-  
+
   const editForm = useForm<UserFormData>({
     resolver: zodResolver(userFormSchema.partial({ password: true })),
     defaultValues: {
@@ -102,14 +116,14 @@ export default function AdminUsers() {
       active: true,
     },
   });
-  
+
   // Mutations
   const addUserMutation = useMutation({
     mutationFn: async (data: UserFormData) => {
       return await apiRequest("POST", "/api/admin/users", data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "Usuário adicionado",
         description: "Usuário adicionado com sucesso.",
@@ -120,18 +134,25 @@ export default function AdminUsers() {
     onError: (error: any) => {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao adicionar usuário. Tente novamente.",
+        description:
+          error.message || "Erro ao adicionar usuário. Tente novamente.",
         variant: "destructive",
       });
     },
   });
-  
+
   const editUserMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number, data: Partial<UserFormData> }) => {
+    mutationFn: async ({
+      id,
+      data,
+    }: {
+      id: number;
+      data: Partial<UserFormData>;
+    }) => {
       return await apiRequest("PUT", `/api/admin/users/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "Usuário atualizado",
         description: "Usuário atualizado com sucesso.",
@@ -142,18 +163,19 @@ export default function AdminUsers() {
     onError: (error: any) => {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao atualizar usuário. Tente novamente.",
+        description:
+          error.message || "Erro ao atualizar usuário. Tente novamente.",
         variant: "destructive",
       });
     },
   });
-  
+
   const toggleUserActiveMutation = useMutation({
-    mutationFn: async ({ id, active }: { id: number, active: boolean }) => {
+    mutationFn: async ({ id, active }: { id: number; active: boolean }) => {
       return await apiRequest("PUT", `/api/admin/users/${id}`, { active });
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "Status alterado",
         description: "Status do usuário alterado com sucesso.",
@@ -162,18 +184,20 @@ export default function AdminUsers() {
     onError: (error: any) => {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao alterar status do usuário. Tente novamente.",
+        description:
+          error.message ||
+          "Erro ao alterar status do usuário. Tente novamente.",
         variant: "destructive",
       });
     },
   });
-  
+
   const deleteUserMutation = useMutation({
     mutationFn: async (id: number) => {
       return await apiRequest("DELETE", `/api/admin/users/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['/api/admin/users'] });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/users"] });
       toast({
         title: "Usuário excluído",
         description: "Usuário excluído com sucesso.",
@@ -184,12 +208,13 @@ export default function AdminUsers() {
     onError: (error: any) => {
       toast({
         title: "Erro",
-        description: error.message || "Erro ao excluir usuário. Tente novamente.",
+        description:
+          error.message || "Erro ao excluir usuário. Tente novamente.",
         variant: "destructive",
       });
     },
   });
-  
+
   // Handlers
   const handleEditUser = (user: any) => {
     editForm.reset({
@@ -205,50 +230,50 @@ export default function AdminUsers() {
     setSelectedUser(user);
     setIsEditDialogOpen(true);
   };
-  
+
   const handleDeleteUser = (user: any) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
-  
+
   const confirmDeleteUser = () => {
     if (selectedUser) {
       deleteUserMutation.mutate(selectedUser.id);
     }
   };
-  
+
   const toggleUserActive = (user: any) => {
     toggleUserActiveMutation.mutate({
       id: user.id,
       active: !user.active,
     });
   };
-  
+
   const onAddSubmit = (data: UserFormData) => {
     addUserMutation.mutate(data);
   };
-  
+
   const onEditSubmit = (data: UserFormData) => {
     if (selectedUser) {
       // Only include the fields that have changed
       const changedData: Partial<UserFormData> = {};
-      
+
       Object.keys(data).forEach((key) => {
         const typedKey = key as keyof UserFormData;
         if (data[typedKey] !== selectedUser[typedKey]) {
           changedData[typedKey] = data[typedKey];
         }
       });
-      
+
       // Only send password if it's provided
       if (data.password === "") {
         delete changedData.password;
       }
-      
+
       editUserMutation.mutate({ id: selectedUser.id, data: changedData });
     }
   };
-  
+
   // Helper to get the role badge
   const getRoleBadge = (role: string) => {
     switch (role) {
@@ -262,7 +287,7 @@ export default function AdminUsers() {
         return <Badge className="bg-gray-600">Cidadão</Badge>;
     }
   };
-  
+
   // Helper to get the role icon
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -276,49 +301,51 @@ export default function AdminUsers() {
         return <User className="h-5 w-5 text-gray-600" />;
     }
   };
-  
+
   if (isLoading) {
     return <LoadingSpinner />;
   }
-  
+
   if (!user || user.role !== "ADMIN") {
     return (
       <Card>
         <CardContent className="p-6 text-center">
           <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
           <h2 className="text-2xl font-bold mb-2">Acesso Negado</h2>
-          <p className="text-gray-600 mb-4">Você não tem permissão para acessar esta página.</p>
+          <p className="text-gray-600 mb-4">
+            Você não tem permissão para acessar esta página.
+          </p>
         </CardContent>
       </Card>
     );
   }
-  
+
   return (
     <>
       <Helmet>
         <title>Gerenciar Usuários - EstacionaFácil</title>
-        <meta name="description" content="Gerencie os usuários do sistema, incluindo cidadãos, fiscais, gerentes e administradores." />
+        <meta
+          name="description"
+          content="Gerencie os usuários do sistema, incluindo cidadãos, fiscais, gerentes e administradores."
+        />
       </Helmet>
-      
+
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gerenciar Usuários</h2>
-        <Button 
-          onClick={() => setIsAddDialogOpen(true)} 
+        <Button
+          onClick={() => setIsAddDialogOpen(true)}
           className="bg-secondary hover:bg-secondary-light text-white"
         >
           <i className="material-icons mr-2">add</i>
           Adicionar Usuário
         </Button>
       </div>
-      
+
       <Card>
         <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
           <CardTitle className="text-lg">Usuários do Sistema</CardTitle>
           <div className="flex items-center space-x-2">
-            <Input
-              placeholder="Buscar usuário..."
-              className="w-64"
-            />
+            <Input placeholder="Buscar usuário..." className="w-64" />
             <Select defaultValue="all">
               <SelectTrigger className="w-[150px]">
                 <SelectValue placeholder="Filtrar por tipo" />
@@ -338,48 +365,79 @@ export default function AdminUsers() {
             <table className="w-full">
               <thead>
                 <tr className="bg-gray-50">
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">E-mail</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Tipo</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Detalhes</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Nome
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    E-mail
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Tipo
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Detalhes
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Status
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                    Ações
+                  </th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
                 {users?.length > 0 ? (
                   users.map((user: any) => (
-                    <tr key={user.id} className={!user.active ? "bg-gray-50" : ""}>
+                    <tr
+                      key={user.id}
+                      className={!user.active ? "bg-gray-50" : ""}
+                    >
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
                             {getRoleIcon(user.role)}
                           </div>
                           <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                            <div className="text-sm text-gray-500">{user.cpf || "CPF não informado"}</div>
+                            <div className="text-sm font-medium text-gray-900">
+                              {user.name}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {user.cpf || "CPF não informado"}
+                            </div>
                           </div>
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.email}</div>
-                        <div className="text-sm text-gray-500">{user.phone || "Telefone não informado"}</div>
+                        <div className="text-sm text-gray-900">
+                          {user.email}
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {user.phone || "Telefone não informado"}
+                        </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         {getRoleBadge(user.role)}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         {user.role === "FISCAL" && (
-                          <div className="text-sm text-gray-900">Código: {user.fiscalCode || "N/A"}</div>
+                          <div className="text-sm text-gray-900">
+                            Código: {user.fiscalCode || "N/A"}
+                          </div>
                         )}
                         {user.role === "MANAGER" && (
-                          <div className="text-sm text-gray-900">Depto: {user.managerDept || "N/A"}</div>
+                          <div className="text-sm text-gray-900">
+                            Depto: {user.managerDept || "N/A"}
+                          </div>
                         )}
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <span className={`px-2 py-1 text-xs rounded-full flex items-center w-fit ${
-                          user.active ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"
-                        }`}>
+                        <span
+                          className={`px-2 py-1 text-xs rounded-full flex items-center w-fit ${
+                            user.active
+                              ? "bg-green-100 text-green-800"
+                              : "bg-red-100 text-red-800"
+                          }`}
+                        >
                           {user.active ? (
                             <>
                               <CheckCircle className="h-3 w-3 mr-1" />
@@ -395,28 +453,32 @@ export default function AdminUsers() {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => handleEditUser(user)}
                             className="text-primary hover:text-primary-dark"
                           >
                             <i className="material-icons text-sm">edit</i>
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            variant="ghost"
+                            size="sm"
                             onClick={() => toggleUserActive(user)}
-                            className={user.active ? "text-amber-600 hover:text-amber-700" : "text-green-600 hover:text-green-700"}
+                            className={
+                              user.active
+                                ? "text-amber-600 hover:text-amber-700"
+                                : "text-green-600 hover:text-green-700"
+                            }
                           >
                             <i className="material-icons text-sm">
                               {user.active ? "block" : "check_circle"}
                             </i>
                           </Button>
                           {user.id !== user.id && ( // Don't allow deleting yourself
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
+                            <Button
+                              variant="ghost"
+                              size="sm"
                               onClick={() => handleDeleteUser(user)}
                               className="text-red-600 hover:text-red-700"
                             >
@@ -429,7 +491,10 @@ export default function AdminUsers() {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-4 py-6 text-center text-gray-500">
+                    <td
+                      colSpan={6}
+                      className="px-4 py-6 text-center text-gray-500"
+                    >
                       Nenhum usuário encontrado.
                     </td>
                   </tr>
@@ -439,7 +504,7 @@ export default function AdminUsers() {
           </div>
         </CardContent>
       </Card>
-      
+
       {/* Add User Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
         <DialogContent className="max-w-md">
@@ -449,9 +514,12 @@ export default function AdminUsers() {
               Preencha os dados do novo usuário.
             </DialogDescription>
           </DialogHeader>
-          
+
           <Form {...addForm}>
-            <form onSubmit={addForm.handleSubmit(onAddSubmit)} className="space-y-4">
+            <form
+              onSubmit={addForm.handleSubmit(onAddSubmit)}
+              className="space-y-4"
+            >
               <FormField
                 control={addForm.control}
                 name="name"
@@ -465,7 +533,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={addForm.control}
                 name="email"
@@ -479,7 +547,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={addForm.control}
@@ -494,7 +562,7 @@ export default function AdminUsers() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={addForm.control}
                   name="phone"
@@ -509,7 +577,7 @@ export default function AdminUsers() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={addForm.control}
                 name="role"
@@ -522,8 +590,10 @@ export default function AdminUsers() {
                         onValueChange={(value: UserRole) => {
                           field.onChange(value);
                           // Reset specific fields when role changes
-                          if (value !== "FISCAL") addForm.setValue("fiscalCode", "");
-                          if (value !== "MANAGER") addForm.setValue("managerDept", "");
+                          if (value !== "FISCAL")
+                            addForm.setValue("fiscalCode", "");
+                          if (value !== "MANAGER")
+                            addForm.setValue("managerDept", "");
                         }}
                       >
                         <SelectTrigger>
@@ -541,7 +611,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               {addForm.watch("role") === "FISCAL" && (
                 <FormField
                   control={addForm.control}
@@ -557,7 +627,7 @@ export default function AdminUsers() {
                   )}
                 />
               )}
-              
+
               {addForm.watch("role") === "MANAGER" && (
                 <FormField
                   control={addForm.control}
@@ -573,7 +643,7 @@ export default function AdminUsers() {
                   )}
                 />
               )}
-              
+
               <FormField
                 control={addForm.control}
                 name="password"
@@ -581,13 +651,17 @@ export default function AdminUsers() {
                   <FormItem>
                     <FormLabel>Senha</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Digite a senha" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="Digite a senha"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={addForm.control}
                 name="active"
@@ -606,7 +680,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
                 <Button
                   type="button"
@@ -627,19 +701,20 @@ export default function AdminUsers() {
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Edit User Dialog */}
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Usuário</DialogTitle>
-            <DialogDescription>
-              Atualize os dados do usuário.
-            </DialogDescription>
+            <DialogDescription>Atualize os dados do usuário.</DialogDescription>
           </DialogHeader>
-          
+
           <Form {...editForm}>
-            <form onSubmit={editForm.handleSubmit(onEditSubmit)} className="space-y-4">
+            <form
+              onSubmit={editForm.handleSubmit(onEditSubmit)}
+              className="space-y-4"
+            >
               <FormField
                 control={editForm.control}
                 name="name"
@@ -653,7 +728,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={editForm.control}
                 name="email"
@@ -667,7 +742,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               <div className="grid grid-cols-2 gap-4">
                 <FormField
                   control={editForm.control}
@@ -682,7 +757,7 @@ export default function AdminUsers() {
                     </FormItem>
                   )}
                 />
-                
+
                 <FormField
                   control={editForm.control}
                   name="phone"
@@ -697,7 +772,7 @@ export default function AdminUsers() {
                   )}
                 />
               </div>
-              
+
               <FormField
                 control={editForm.control}
                 name="role"
@@ -710,8 +785,10 @@ export default function AdminUsers() {
                         onValueChange={(value: UserRole) => {
                           field.onChange(value);
                           // Reset specific fields when role changes
-                          if (value !== "FISCAL") editForm.setValue("fiscalCode", "");
-                          if (value !== "MANAGER") editForm.setValue("managerDept", "");
+                          if (value !== "FISCAL")
+                            editForm.setValue("fiscalCode", "");
+                          if (value !== "MANAGER")
+                            editForm.setValue("managerDept", "");
                         }}
                       >
                         <SelectTrigger>
@@ -729,7 +806,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               {editForm.watch("role") === "FISCAL" && (
                 <FormField
                   control={editForm.control}
@@ -745,7 +822,7 @@ export default function AdminUsers() {
                   )}
                 />
               )}
-              
+
               {editForm.watch("role") === "MANAGER" && (
                 <FormField
                   control={editForm.control}
@@ -761,7 +838,7 @@ export default function AdminUsers() {
                   )}
                 />
               )}
-              
+
               <FormField
                 control={editForm.control}
                 name="password"
@@ -769,13 +846,17 @@ export default function AdminUsers() {
                   <FormItem>
                     <FormLabel>Nova Senha (opcional)</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Deixe em branco para manter a atual" {...field} />
+                      <Input
+                        type="password"
+                        placeholder="Deixe em branco para manter a atual"
+                        {...field}
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-              
+
               <FormField
                 control={editForm.control}
                 name="active"
@@ -794,7 +875,7 @@ export default function AdminUsers() {
                   </FormItem>
                 )}
               />
-              
+
               <DialogFooter>
                 <Button
                   type="button"
@@ -815,14 +896,18 @@ export default function AdminUsers() {
           </Form>
         </DialogContent>
       </Dialog>
-      
+
       {/* Delete User Confirmation */}
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Excluir Usuário</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir o usuário {selectedUser?.name}? Esta ação não pode ser desfeita.
+              Tem certeza que deseja excluir o usuário {selectedUser?.name}?
+              Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

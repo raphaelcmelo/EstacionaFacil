@@ -13,7 +13,7 @@ const AUTH_MODULE_INSTANCE_ID = Math.random();
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<User>;
+  login: (cpf: string, password: string) => Promise<User>;
   register: (userData: any) => Promise<User>;
   logout: () => Promise<void>;
 }
@@ -42,6 +42,7 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  // sessionStorage.setItem("TOKEN", user?.tokens?.access.token);
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -54,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(userData);
         }
       } catch (error) {
-        console.error("Auth check failed:", error);
+        console.error("Falha na checagem de autenticação", error);
       } finally {
         setIsLoading(false);
       }
@@ -63,18 +64,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   // ... (resto das funções login, register, logout sem alterações) ...
-  const login = async (email: string, password: string): Promise<User> => {
+  const login = async (cpf: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(`${baseUrl}/v1/gestor-usuarios/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ cpf, password }),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Login failed");
+      if (!res.ok) throw new Error("Falha no login");
       const userData = await res.json();
-      setUser(userData);
+      setUser(userData.user);
       return userData;
     } finally {
       setIsLoading(false);
@@ -90,7 +91,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         body: JSON.stringify(userData),
         credentials: "include",
       });
-      if (!res.ok) throw new Error("Registration failed");
+      if (!res.ok) throw new Error("Falha no registro");
       const newUserData = await res.json();
       setUser(newUserData);
       return newUserData;
