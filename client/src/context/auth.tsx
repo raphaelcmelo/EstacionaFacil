@@ -47,15 +47,31 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkAuth = async () => {
       try {
+        const accessToken = localStorage.getItem("accessToken");
+        if (!accessToken) {
+          setIsLoading(false);
+          return;
+        }
+
         const res = await fetch(`${baseUrl}/v1/gestor-usuarios/auth/me`, {
           credentials: "include",
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
+          },
         });
         if (res.ok) {
           const userData = await res.json();
           setUser(userData);
+        } else {
+          // Se a requisição falhar, limpa o localStorage
+          localStorage.removeItem("accessToken");
+          localStorage.removeItem("refreshToken");
         }
       } catch (error) {
         console.error("Falha na checagem de autenticação", error);
+        // Em caso de erro, limpa o localStorage
+        localStorage.removeItem("accessToken");
+        localStorage.removeItem("refreshToken");
       } finally {
         setIsLoading(false);
       }
@@ -75,7 +91,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) throw new Error("Falha no login");
       const userData = await res.json();
+      console.log(userData);
       setUser(userData.user);
+      localStorage.setItem("accessToken", userData.tokens.access.token);
+      localStorage.setItem("refreshToken", userData.tokens.refresh.token);
       return userData;
     } finally {
       setIsLoading(false);
@@ -108,6 +127,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         credentials: "include",
       });
       setUser(null);
+      localStorage.removeItem("accessToken");
+      localStorage.removeItem("refreshToken");
     } finally {
       setIsLoading(false);
     }

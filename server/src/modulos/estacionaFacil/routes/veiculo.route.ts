@@ -7,6 +7,6 @@ import { auth } from "../../../middlewares/auth";
 
 const veiculoRoutes = Router();
 
-veiculoRoutes.post("/criar", auth("me"), validate(veiculoSchema), criarVeiculo);
+veiculoRoutes.post("/criar", auth(), validate(veiculoSchema), criarVeiculo);
 
 export default veiculoRoutes;

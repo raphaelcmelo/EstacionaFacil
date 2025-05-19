@@ -106,7 +106,6 @@ export default function UserVehicles() {
     mutationFn: async (data: VehicleFormData) => {
       const payload = {
         ...data,
-        userId: user?.id,
       };
       return await apiRequest(
         "POST",

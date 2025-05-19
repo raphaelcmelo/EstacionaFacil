@@ -1,7 +1,7 @@
 const allRoles = {
-  servidor: ["getServidor", "me"],
+  servidor: ["getServidor", "me", "manageUsers", "getUsers"],
   CITIZEN: ["me"],
-  managerPontoEletr: ["manageUsers", "me"],
+  managerPontoEletr: ["manageUsers", "me", "getUsers"],
   admin: ["manageUsers", "getUsers", "me"],
 };
 
