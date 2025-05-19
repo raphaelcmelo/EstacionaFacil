@@ -43,7 +43,6 @@ const quickBuySchema = z.object({
     .max(8, "Placa deve ter no máximo 8 caracteres"),
   model: z.string().min(2, "Modelo deve ter pelo menos 2 caracteres"),
   durationHours: z.number().min(1).max(12),
-  zoneId: z.number().positive(),
   paymentMethod: z.enum([
     PaymentMethod.CREDIT_CARD,
     PaymentMethod.DEBIT_CARD,
@@ -76,6 +75,7 @@ export default function QuickBuy() {
   const [selectedHourPrice, setSelectedHourPrice] = useState<string>("0.00");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permitData, setPermitData] = useState<any>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
 
   // Form for quick buy
   const quickBuyForm = useForm<QuickBuyFormData>({
@@ -84,7 +84,6 @@ export default function QuickBuy() {
       licensePlate: "",
       model: "",
       durationHours: 0,
-      zoneId: 0,
       paymentMethod: PaymentMethod.CREDIT_CARD,
     },
   });
@@ -100,33 +99,41 @@ export default function QuickBuy() {
     },
   });
 
-  // Get selected zone id from form
-  const selectedZoneId = quickBuyForm.watch("zoneId");
   const selectedPaymentMethod = quickBuyForm.watch("paymentMethod");
-
-  // Get zones
-  const { data: zones, isLoading: isLoadingZones } = useQuery({
-    queryKey: ["/api/zones"],
-  });
 
   // Get user vehicles if logged in
   const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery({
-    queryKey: ["/api/vehicles"],
+    queryKey: ["/v1/estaciona-facil/veiculo/listar"],
     enabled: !!user,
   });
 
-  // Get current price config for selected zone
+  // Get current price config
   const { data: priceConfig, isLoading: isLoadingPrices } = useQuery({
-    queryKey: ["/api/prices", selectedZoneId],
-    enabled: !!selectedZoneId,
+    queryKey: ["/api/prices"],
   });
 
-  // Set default zone if available
-  useEffect(() => {
-    if (zones && zones.length > 0 && !selectedZoneId) {
-      quickBuyForm.setValue("zoneId", zones[0].id);
+  // Watch form fields for manual input
+  const licensePlateValue = quickBuyForm.watch("licensePlate");
+  const modelValue = quickBuyForm.watch("model");
+
+  // Disable vehicle selection if manual input exists
+  const isVehicleSelectionDisabled =
+    licensePlateValue.length > 0 || modelValue.length > 0;
+
+  // Handle vehicle selection
+  const handleVehicleSelection = (value: string) => {
+    setSelectedVehicle(value);
+    if (value === "new") {
+      quickBuyForm.setValue("licensePlate", "");
+      quickBuyForm.setValue("model", "");
+    } else {
+      const vehicle = userVehicles.find((v: any) => v.id.toString() === value);
+      if (vehicle) {
+        quickBuyForm.setValue("licensePlate", vehicle.placa);
+        quickBuyForm.setValue("model", vehicle.modelo);
+      }
     }
-  }, [zones]);
+  };
 
   // Update price when duration or zone changes
   useEffect(() => {
@@ -208,7 +215,7 @@ export default function QuickBuy() {
     return formatDateTime(endTime);
   };
 
-  if (isLoadingZones || isLoadingPrices || (user && isLoadingVehicles)) {
+  if (isLoadingPrices || (user && isLoadingVehicles)) {
     return <LoadingSpinner />;
   }
 
@@ -242,43 +249,28 @@ export default function QuickBuy() {
                     </div>
                     <span className="font-semibold">Dados do Veículo</span>
                   </div>
-                  <Separator className="flex-grow ml-4" />
+                  {/* <Separator className="flex-grow ml-4" /> */}
                 </div>
 
-                {user && userVehicles?.length > 0 && (
+                {user && (
                   <div className="mb-6">
                     <Label className="block text-sm font-medium text-gray-700 mb-2">
-                      Selecione um veículo cadastrado:
+                      Selecione um veículo:
                     </Label>
                     <Select
-                      onValueChange={(value) => {
-                        if (value === "new") {
-                          quickBuyForm.setValue("licensePlate", "");
-                          quickBuyForm.setValue("model", "");
-                        } else {
-                          const vehicle = userVehicles.find(
-                            (v: any) => v.id.toString() === value
-                          );
-                          if (vehicle) {
-                            quickBuyForm.setValue(
-                              "licensePlate",
-                              vehicle.licensePlate
-                            );
-                            quickBuyForm.setValue("model", vehicle.model);
-                          }
-                        }
-                      }}
+                      value={selectedVehicle || ""}
+                      onValueChange={handleVehicleSelection}
                     >
                       <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione um veículo" />
+                        <SelectValue placeholder="Selecione" />
                       </SelectTrigger>
                       <SelectContent>
-                        {userVehicles.map((vehicle: any) => (
+                        {userVehicles?.map((vehicle: any) => (
                           <SelectItem
                             key={vehicle.id}
                             value={vehicle.id.toString()}
                           >
-                            {vehicle.licensePlate} - {vehicle.model}
+                            {vehicle.placa} - {vehicle.modelo}
                           </SelectItem>
                         ))}
                         <SelectItem value="new">+ Novo veículo</SelectItem>
@@ -287,42 +279,44 @@ export default function QuickBuy() {
                   </div>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <FormField
-                    control={quickBuyForm.control}
-                    name="licensePlate"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Placa do Veículo</FormLabel>
-                        <FormControl>
-                          <LicensePlateInput
-                            placeholder="ABC1234"
-                            value={field.value}
-                            onChange={field.onChange}
-                          />
-                        </FormControl>
-                        <FormMessage />
-                        <p className="text-xs text-gray-500 mt-1">
-                          Formato: ABC1234 ou ABC1D23
-                        </p>
-                      </FormItem>
-                    )}
-                  />
+                {selectedVehicle === "new" && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                    <FormField
+                      control={quickBuyForm.control}
+                      name="licensePlate"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Placa do Veículo</FormLabel>
+                          <FormControl>
+                            <LicensePlateInput
+                              placeholder="ABC1234"
+                              value={field.value}
+                              onChange={field.onChange}
+                            />
+                          </FormControl>
+                          <FormMessage />
+                          <p className="text-xs text-gray-500 mt-1">
+                            Formato: ABC1234 ou ABC1D23
+                          </p>
+                        </FormItem>
+                      )}
+                    />
 
-                  <FormField
-                    control={quickBuyForm.control}
-                    name="model"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Modelo do Veículo</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Ex: Fiat Palio" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                    <FormField
+                      control={quickBuyForm.control}
+                      name="model"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Modelo do Veículo</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Ex: Fiat Palio" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                )}
 
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center">
@@ -331,51 +325,17 @@ export default function QuickBuy() {
                     </div>
                     <span className="text-gray-500">Tempo Desejado</span>
                   </div>
-                  <Separator className="flex-grow ml-4" />
+                  {/* <Separator className="flex-grow ml-4" /> */}
                 </div>
-
-                <FormField
-                  control={quickBuyForm.control}
-                  name="zoneId"
-                  render={({ field }) => (
-                    <FormItem className="mb-6">
-                      <FormLabel>Zona de Estacionamento</FormLabel>
-                      <FormControl>
-                        <Select
-                          value={field.value.toString()}
-                          onValueChange={(value) =>
-                            field.onChange(parseInt(value))
-                          }
-                        >
-                          <SelectTrigger className="w-full">
-                            <SelectValue placeholder="Selecione uma zona" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {zones?.map((zone: any) => (
-                              <SelectItem
-                                key={zone.id}
-                                value={zone.id.toString()}
-                              >
-                                {zone.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
 
                 <div className="flex justify-end">
                   <Button
                     type="button"
-                    className="bg-primary hover:bg-primary-light text-white"
+                    variant="default"
                     onClick={() => {
                       const isValid = quickBuyForm.trigger([
                         "licensePlate",
                         "model",
-                        "zoneId",
                       ]);
                       if (isValid) {
                         setCurrentStep(2);
@@ -404,47 +364,47 @@ export default function QuickBuy() {
                     Selecione a duração:
                   </Label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                    {priceConfig && (
+                    {priceConfig && typeof priceConfig === "object" && (
                       <>
                         <DurationOption
                           hours={1}
-                          price={priceConfig.hour1Price}
+                          price={priceConfig.hour1Price as number}
                           selected={selectedDuration === 1}
                           onClick={() => setSelectedDuration(1)}
                         />
                         <DurationOption
                           hours={2}
-                          price={priceConfig.hour2Price}
+                          price={priceConfig.hour2Price as number}
                           selected={selectedDuration === 2}
                           onClick={() => setSelectedDuration(2)}
                         />
                         <DurationOption
                           hours={3}
-                          price={priceConfig.hour3Price}
+                          price={priceConfig.hour3Price as number}
                           selected={selectedDuration === 3}
                           onClick={() => setSelectedDuration(3)}
                         />
                         <DurationOption
                           hours={4}
-                          price={priceConfig.hour4Price}
+                          price={priceConfig.hour4Price as number}
                           selected={selectedDuration === 4}
                           onClick={() => setSelectedDuration(4)}
                         />
                         <DurationOption
                           hours={5}
-                          price={priceConfig.hour5Price}
+                          price={priceConfig.hour5Price as number}
                           selected={selectedDuration === 5}
                           onClick={() => setSelectedDuration(5)}
                         />
                         <DurationOption
                           hours={6}
-                          price={priceConfig.hour6Price}
+                          price={priceConfig.hour6Price as number}
                           selected={selectedDuration === 6}
                           onClick={() => setSelectedDuration(6)}
                         />
                         <DurationOption
                           hours={12}
-                          price={priceConfig.hour12Price}
+                          price={priceConfig.hour12Price as number}
                           selected={selectedDuration === 12}
                           onClick={() => setSelectedDuration(12)}
                         />
