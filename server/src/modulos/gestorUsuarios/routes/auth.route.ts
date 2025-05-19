@@ -12,6 +12,6 @@ const authRoutes = Router();
 authRoutes.post("/register", validate(registerSchema), authRegister);
 // authRoutes.post("/register", authRegister);
 authRoutes.post("/login", validate(loginSchema), authLogin);
-authRoutes.get("/me", auth("me"), getMe);
+authRoutes.get("/me", auth(), getMe);
 
 export default authRoutes;

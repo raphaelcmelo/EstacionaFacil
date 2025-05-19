@@ -63,13 +63,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           const userData = await res.json();
           setUser(userData);
         } else {
-          // Se a requisição falhar, limpa o localStorage
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
         }
       } catch (error) {
         console.error("Falha na checagem de autenticação", error);
-        // Em caso de erro, limpa o localStorage
         localStorage.removeItem("accessToken");
         localStorage.removeItem("refreshToken");
       } finally {
@@ -79,7 +77,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  // ... (resto das funções login, register, logout sem alterações) ...
   const login = async (cpf: string, password: string): Promise<User> => {
     setIsLoading(true);
     try {

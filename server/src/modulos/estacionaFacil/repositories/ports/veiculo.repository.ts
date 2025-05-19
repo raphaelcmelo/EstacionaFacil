@@ -8,4 +8,5 @@ export type VeiculoInput = {
 
 export interface VeiculoRepository {
   create({ placa, modelo }: VeiculoInput, userId: string): Promise<Veiculo>;
+  listar(userId: string): Promise<Veiculo[]>;
 }

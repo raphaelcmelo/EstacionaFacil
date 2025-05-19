@@ -13,7 +13,7 @@ const verifyCallback =
     }
     req.user = user;
 
-    if (requiredRights.length) {
+    if (requiredRights && requiredRights.length) {
       const userRights = roleRights.get(user.role);
 
       if (!userRights) {

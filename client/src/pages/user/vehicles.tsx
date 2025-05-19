@@ -63,6 +63,15 @@ const vehicleSchema = z.object({
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
 
+type Vehicle = {
+  id: string;
+  userId: string;
+  placa: string;
+  modelo: string;
+  createdAt: string;
+  updatedAt: string;
+};
+
 export default function UserVehicles() {
   const { user } = useAuth();
   const { toast } = useToast();
@@ -76,13 +85,23 @@ export default function UserVehicles() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(!!editId);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedVehicle, setSelectedVehicle] = useState<any>(null);
+  const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
 
   // Get user vehicles
-  const { data: vehicles, isLoading } = useQuery({
-    queryKey: ["/api/vehicles"],
+  const { data: vehicles = [], isLoading } = useQuery<Vehicle[]>({
+    queryKey: ["vehicles"],
+    queryFn: async () => {
+      const response = await apiRequest(
+        "GET",
+        `${baseUrl}/v1/estaciona-facil/veiculo/listar`
+      );
+      console.log("Dados dos veículos:", response); // Para debug
+      return response;
+    },
     enabled: !!user,
   });
+
+  console.log("Veículos após processamento:", vehicles); // Para debug
 
   // Forms
   const addForm = useForm<VehicleFormData>({
@@ -134,11 +153,11 @@ export default function UserVehicles() {
   });
 
   const editVehicleMutation = useMutation({
-    mutationFn: async ({ id, data }: { id: number; data: VehicleFormData }) => {
+    mutationFn: async ({ id, data }: { id: string; data: VehicleFormData }) => {
       return await apiRequest("PUT", `/api/vehicles/${id}`, data);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       toast({
         title: "Veículo atualizado",
         description: "Veículo atualizado com sucesso.",
@@ -158,11 +177,11 @@ export default function UserVehicles() {
   });
 
   const deleteVehicleMutation = useMutation({
-    mutationFn: async (id: number) => {
+    mutationFn: async (id: string) => {
       return await apiRequest("DELETE", `/api/vehicles/${id}`);
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       toast({
         title: "Veículo excluído",
         description: "Veículo excluído com sucesso.",
@@ -181,10 +200,10 @@ export default function UserVehicles() {
   });
 
   // Handle opening the edit dialog
-  const handleEditVehicle = (vehicle: any) => {
+  const handleEditVehicle = (vehicle: Vehicle) => {
     editForm.reset({
-      placa: vehicle.licensePlate,
-      modelo: vehicle.model,
+      placa: vehicle.placa,
+      modelo: vehicle.modelo,
     });
     setSelectedVehicle(vehicle);
     setIsEditDialogOpen(true);
@@ -192,7 +211,7 @@ export default function UserVehicles() {
 
   // Check if we need to preload edit form based on URL param
   if (editId && vehicles && !isEditDialogOpen) {
-    const vehicleToEdit = vehicles.find((v: any) => v.id === parseInt(editId));
+    const vehicleToEdit = vehicles.find((v) => v.id === editId);
     if (vehicleToEdit) {
       handleEditVehicle(vehicleToEdit);
     }
@@ -209,7 +228,7 @@ export default function UserVehicles() {
     }
   };
 
-  const handleDeleteVehicle = (vehicle: any) => {
+  const handleDeleteVehicle = (vehicle: Vehicle) => {
     setSelectedVehicle(vehicle);
     setIsDeleteDialogOpen(true);
   };
@@ -248,8 +267,8 @@ export default function UserVehicles() {
         </CardHeader>
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {vehicles?.length > 0 ? (
-              vehicles.map((vehicle: any) => (
+            {Array.isArray(vehicles) && vehicles.length > 0 ? (
+              vehicles.map((vehicle) => (
                 <div
                   key={vehicle.id}
                   className="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors"
@@ -259,9 +278,7 @@ export default function UserVehicles() {
                       <i className="material-icons text-primary mr-2">
                         directions_car
                       </i>
-                      <span className="font-semibold">
-                        {vehicle.licensePlate}
-                      </span>
+                      <span className="font-semibold">{vehicle.placa}</span>
                     </div>
                     <div className="flex space-x-2">
                       <Button
@@ -282,7 +299,7 @@ export default function UserVehicles() {
                       </Button>
                     </div>
                   </div>
-                  <div className="text-gray-600">{vehicle.model}</div>
+                  <div className="text-gray-600">{vehicle.modelo}</div>
                 </div>
               ))
             ) : (
@@ -404,7 +421,7 @@ export default function UserVehicles() {
             >
               <FormField
                 control={editForm.control}
-                name="licensePlate"
+                name="placa"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Placa do Veículo</FormLabel>
@@ -425,7 +442,7 @@ export default function UserVehicles() {
 
               <FormField
                 control={editForm.control}
-                name="model"
+                name="modelo"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Modelo do Veículo</FormLabel>

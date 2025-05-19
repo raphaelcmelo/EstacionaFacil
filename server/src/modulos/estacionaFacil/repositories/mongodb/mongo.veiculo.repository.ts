@@ -9,4 +9,8 @@ export class MongoVeiculoRepository implements VeiculoRepository {
     const veiculo = await VeiculoModel.create({ userId, placa, modelo });
     return veiculo;
   }
+  async listar(userId: string): Promise<Veiculo[]> {
+    const veiculos = await VeiculoModel.find({ userId });
+    return veiculos;
+  }
 }
