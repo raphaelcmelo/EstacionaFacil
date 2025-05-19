@@ -7,24 +7,45 @@ import { LoadingSpinner } from "@/components/ui/spinner";
 import { formatTimeRemaining, formatDateTime, formatMoney } from "@/lib/utils";
 import { useState, useEffect } from "react";
 import { Helmet } from "react-helmet";
+import { apiRequest } from "@/lib/queryClient";
+
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
+type Vehicle = {
+  id: string;
+  userId: string;
+  placa: string;
+  modelo: string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export default function UserDashboard() {
   const { user } = useAuth();
 
   // Get active parking permits
-  const { data: activePermits, isLoading: isLoadingPermits } = useQuery({
+  const { data: activePermits = [], isLoading: isLoadingPermits } = useQuery({
     queryKey: ["/api/permits/active"],
     enabled: !!user,
   });
 
   // Get user vehicles
-  const { data: vehicles, isLoading: isLoadingVehicles } = useQuery({
-    queryKey: ["/api/vehicles"],
+  const { data: vehicles = [], isLoading: isLoadingVehicles } = useQuery<
+    Vehicle[]
+  >({
+    queryKey: ["vehicles"],
+    queryFn: async () => {
+      const response = await apiRequest(
+        "GET",
+        `${baseUrl}/v1/estaciona-facil/veiculo/listar`
+      );
+      return response;
+    },
     enabled: !!user,
   });
 
   // Get permit history for the stats
-  const { data: permitHistory, isLoading: isLoadingHistory } = useQuery({
+  const { data: permitHistory = [], isLoading: isLoadingHistory } = useQuery({
     queryKey: ["/api/permits/history", { limit: 10, offset: 0 }],
     enabled: !!user,
   });
@@ -215,7 +236,7 @@ export default function UserDashboard() {
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {vehicles?.length > 0 ? (
-              vehicles.map((vehicle: any) => (
+              vehicles.map((vehicle) => (
                 <div
                   key={vehicle.id}
                   className="border border-gray-200 rounded-lg p-4 hover:border-primary transition-colors"
@@ -225,9 +246,7 @@ export default function UserDashboard() {
                       <i className="material-icons text-primary mr-2">
                         directions_car
                       </i>
-                      <span className="font-semibold">
-                        {vehicle.licensePlate}
-                      </span>
+                      <span className="font-semibold">{vehicle.placa}</span>
                     </div>
                     <div className="flex space-x-2">
                       <Link href={`/vehicles?edit=${vehicle.id}`}>
@@ -241,7 +260,7 @@ export default function UserDashboard() {
                       </Link>
                     </div>
                   </div>
-                  <div className="text-gray-600">{vehicle.model}</div>
+                  <div className="text-gray-600">{vehicle.modelo}</div>
                 </div>
               ))
             ) : (
