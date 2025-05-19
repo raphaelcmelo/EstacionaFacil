@@ -37,22 +37,31 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatMoney } from "@/lib/utils";
 import { format } from "date-fns";
 import { ptBR } from "date-fns/locale";
 import { AlertCircle } from "lucide-react";
 
+interface PriceConfig {
+  id: number;
+  validFrom: string;
+  validTo: string | null;
+  hour1Price: number;
+  hour2Price: number;
+  hour3Price: number;
+  hour4Price: number;
+  hour5Price: number;
+  hour6Price: number;
+  hour12Price: number;
+}
+
+interface PriceConfigsResponse {
+  current: PriceConfig;
+  history: PriceConfig[];
+}
+
 // Form schema for adding/editing price configs
 const priceConfigSchema = z.object({
-  zoneId: z.number().int().positive("Selecione uma zona"),
   validFrom: z
     .string()
     .min(1, "Data de início é obrigatória")
@@ -65,41 +74,13 @@ const priceConfigSchema = z.object({
     .refine((val) => !val || !isNaN(Date.parse(val)), {
       message: "Data de término inválida",
     }),
-  hour1Price: z
-    .string()
-    .min(1, "Informe o valor para 1 hora")
-    .regex(/^\d+([,.]\d{1,2})?$/, "Formato de preço inválido")
-    .transform((val) => parseFloat(val.replace(",", "."))),
-  hour2Price: z
-    .string()
-    .min(1, "Informe o valor para 2 horas")
-    .regex(/^\d+([,.]\d{1,2})?$/, "Formato de preço inválido")
-    .transform((val) => parseFloat(val.replace(",", "."))),
-  hour3Price: z
-    .string()
-    .min(1, "Informe o valor para 3 horas")
-    .regex(/^\d+([,.]\d{1,2})?$/, "Formato de preço inválido")
-    .transform((val) => parseFloat(val.replace(",", "."))),
-  hour4Price: z
-    .string()
-    .min(1, "Informe o valor para 4 horas")
-    .regex(/^\d+([,.]\d{1,2})?$/, "Formato de preço inválido")
-    .transform((val) => parseFloat(val.replace(",", "."))),
-  hour5Price: z
-    .string()
-    .min(1, "Informe o valor para 5 horas")
-    .regex(/^\d+([,.]\d{1,2})?$/, "Formato de preço inválido")
-    .transform((val) => parseFloat(val.replace(",", "."))),
-  hour6Price: z
-    .string()
-    .min(1, "Informe o valor para 6 horas")
-    .regex(/^\d+([,.]\d{1,2})?$/, "Formato de preço inválido")
-    .transform((val) => parseFloat(val.replace(",", "."))),
-  hour12Price: z
-    .string()
-    .min(1, "Informe o valor para 12 horas")
-    .regex(/^\d+([,.]\d{1,2})?$/, "Formato de preço inválido")
-    .transform((val) => parseFloat(val.replace(",", "."))),
+  hour1Price: z.number().min(0, "O valor deve ser maior ou igual a zero"),
+  hour2Price: z.number().min(0, "O valor deve ser maior ou igual a zero"),
+  hour3Price: z.number().min(0, "O valor deve ser maior ou igual a zero"),
+  hour4Price: z.number().min(0, "O valor deve ser maior ou igual a zero"),
+  hour5Price: z.number().min(0, "O valor deve ser maior ou igual a zero"),
+  hour6Price: z.number().min(0, "O valor deve ser maior ou igual a zero"),
+  hour12Price: z.number().min(0, "O valor deve ser maior ou igual a zero"),
 });
 
 type PriceConfigFormData = z.infer<typeof priceConfigSchema>;
@@ -113,54 +94,42 @@ export default function AdminPrices() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedPriceConfig, setSelectedPriceConfig] = useState<any>(null);
-  const [selectedZoneId, setSelectedZoneId] = useState<number | null>(null);
 
-  // Get zones list
-  const {
-    data: zones,
-    isLoading: isLoadingZones,
-    error: zonesError,
-  } = useQuery({
-    queryKey: ["/api/admin/zones"], // Corrigido para o endpoint correto
-    enabled: !!user && (user.role === "MANAGER" || user.role === "ADMIN"),
-  });
-
-  // Get price configs for selected zone
-  const { data: priceConfigs, isLoading: isLoadingPrices } = useQuery({
-    queryKey: ["/api/admin/prices", selectedZoneId],
-    enabled: !!selectedZoneId,
-  });
+  // Get price configs
+  const { data: priceConfigs, isLoading: isLoadingPrices } =
+    useQuery<PriceConfigsResponse>({
+      queryKey: ["/api/admin/prices"],
+      enabled: !!user && (user.role === "MANAGER" || user.role === "ADMIN"),
+    });
 
   // Forms
   const addForm = useForm<PriceConfigFormData>({
     resolver: zodResolver(priceConfigSchema),
     defaultValues: {
-      zoneId: 0,
       validFrom: format(new Date(), "yyyy-MM-dd'T'HH:mm", { locale: ptBR }),
       validTo: "",
-      hour1Price: "",
-      hour2Price: "",
-      hour3Price: "",
-      hour4Price: "",
-      hour5Price: "",
-      hour6Price: "",
-      hour12Price: "",
+      hour1Price: 0,
+      hour2Price: 0,
+      hour3Price: 0,
+      hour4Price: 0,
+      hour5Price: 0,
+      hour6Price: 0,
+      hour12Price: 0,
     },
   });
 
   const editForm = useForm<PriceConfigFormData>({
     resolver: zodResolver(priceConfigSchema),
     defaultValues: {
-      zoneId: 0,
       validFrom: "",
       validTo: "",
-      hour1Price: "",
-      hour2Price: "",
-      hour3Price: "",
-      hour4Price: "",
-      hour5Price: "",
-      hour6Price: "",
-      hour12Price: "",
+      hour1Price: 0,
+      hour2Price: 0,
+      hour3Price: 0,
+      hour4Price: 0,
+      hour5Price: 0,
+      hour6Price: 0,
+      hour12Price: 0,
     },
   });
 
@@ -171,7 +140,7 @@ export default function AdminPrices() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/prices", selectedZoneId],
+        queryKey: ["/api/admin/prices"],
       });
       toast({
         title: "Configuração de preço adicionada",
@@ -203,7 +172,7 @@ export default function AdminPrices() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/prices", selectedZoneId],
+        queryKey: ["/api/admin/prices"],
       });
       toast({
         title: "Configuração de preço atualizada",
@@ -229,7 +198,7 @@ export default function AdminPrices() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/prices", selectedZoneId],
+        queryKey: ["/api/admin/prices"],
       });
       toast({
         title: "Configuração de preço excluída",
@@ -250,18 +219,12 @@ export default function AdminPrices() {
   });
 
   // Handlers
-  const handleZoneChange = (zoneId: string) => {
-    setSelectedZoneId(parseInt(zoneId));
-  };
-
   const handleAddPriceConfig = () => {
-    addForm.setValue("zoneId", selectedZoneId || 0);
     setIsAddDialogOpen(true);
   };
 
   const handleEditPriceConfig = (priceConfig: any) => {
     editForm.reset({
-      zoneId: priceConfig.zoneId,
       validFrom: format(new Date(priceConfig.validFrom), "yyyy-MM-dd'T'HH:mm", {
         locale: ptBR,
       }),
@@ -308,10 +271,6 @@ export default function AdminPrices() {
     return format(new Date(date), "dd/MM/yyyy HH:mm", { locale: ptBR });
   };
 
-  if (isLoadingZones) {
-    return <LoadingSpinner />;
-  }
-
   if (!user || (user.role !== "MANAGER" && user.role !== "ADMIN")) {
     return (
       <Card>
@@ -332,7 +291,7 @@ export default function AdminPrices() {
         <title>Gerenciar Preços - EstacionaFácil</title>
         <meta
           name="description"
-          content="Gerencie os preços de estacionamento para cada zona do sistema rotativo municipal."
+          content="Gerencie os preços de estacionamento do sistema rotativo municipal."
         />
       </Helmet>
 
@@ -341,7 +300,6 @@ export default function AdminPrices() {
         <Button
           onClick={handleAddPriceConfig}
           className="bg-secondary hover:bg-secondary-light text-white"
-          disabled={!selectedZoneId}
         >
           <i className="material-icons mr-2">add</i>
           Nova Configuração de Preço
@@ -351,244 +309,193 @@ export default function AdminPrices() {
       <div className="grid grid-cols-1 gap-6">
         <Card>
           <CardHeader className="p-4 border-b border-gray-200">
-            <CardTitle className="text-lg">
-              Configuração de Preços por Zona
-            </CardTitle>
+            <CardTitle className="text-lg">Configuração de Preços</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
-            <div className="mb-6">
-              <Label className="block text-sm font-medium text-gray-700 mb-2">
-                Selecione uma zona para configurar os preços:
-              </Label>
-              <Select onValueChange={handleZoneChange}>
-                <SelectTrigger className="w-full md:w-80">
-                  <SelectValue placeholder="Selecione uma zona" />
-                </SelectTrigger>
-                <SelectContent>
-                  {zones?.map((zone: any) => (
-                    <SelectItem key={zone.id} value={zone.id.toString()}>
-                      {zone.name} {!zone.active && "(Inativa)"}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            {isLoadingPrices ? (
+              <LoadingSpinner size="sm" />
+            ) : priceConfigs?.current ? (
+              <div className="bg-white border border-gray-200 rounded-lg p-4">
+                <div className="flex justify-between items-center mb-4">
+                  <div>
+                    <h3 className="font-semibold text-lg">
+                      Configuração Atual de Preços
+                    </h3>
+                    <p className="text-sm text-gray-600">
+                      Válida desde: {formatDate(priceConfigs.current.validFrom)}
+                      {priceConfigs.current.validTo &&
+                        ` até ${formatDate(priceConfigs.current.validTo)}`}
+                    </p>
+                  </div>
+                  <div className="flex space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        handleEditPriceConfig(priceConfigs.current)
+                      }
+                      className="text-primary"
+                    >
+                      <i className="material-icons text-sm mr-1">edit</i>
+                      Editar
+                    </Button>
+                  </div>
+                </div>
 
-            {selectedZoneId && (
-              <div>
-                <Tabs defaultValue="current">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="current">
-                      Configuração Atual
-                    </TabsTrigger>
-                    <TabsTrigger value="history">Histórico</TabsTrigger>
-                  </TabsList>
+                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="font-medium mb-1">1 hora</h4>
+                    <p className="text-secondary text-lg font-semibold">
+                      {formatMoney(priceConfigs.current.hour1Price)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="font-medium mb-1">2 horas</h4>
+                    <p className="text-secondary text-lg font-semibold">
+                      {formatMoney(priceConfigs.current.hour2Price)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="font-medium mb-1">3 horas</h4>
+                    <p className="text-secondary text-lg font-semibold">
+                      {formatMoney(priceConfigs.current.hour3Price)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="font-medium mb-1">4 horas</h4>
+                    <p className="text-secondary text-lg font-semibold">
+                      {formatMoney(priceConfigs.current.hour4Price)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="font-medium mb-1">5 horas</h4>
+                    <p className="text-secondary text-lg font-semibold">
+                      {formatMoney(priceConfigs.current.hour5Price)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="font-medium mb-1">6 horas</h4>
+                    <p className="text-secondary text-lg font-semibold">
+                      {formatMoney(priceConfigs.current.hour6Price)}
+                    </p>
+                  </div>
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <h4 className="font-medium mb-1">12 horas</h4>
+                    <p className="text-secondary text-lg font-semibold">
+                      {formatMoney(priceConfigs.current.hour12Price)}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="text-center py-6 bg-gray-50 rounded-lg">
+                <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
+                  <i className="material-icons text-primary">info</i>
+                </div>
+                <h3 className="font-semibold mb-2">
+                  Nenhuma configuração de preço definida
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Ainda não existe configuração de preços cadastrada.
+                </p>
+                <Button
+                  onClick={handleAddPriceConfig}
+                  className="bg-secondary hover:bg-secondary-light text-white"
+                >
+                  Adicionar Configuração
+                </Button>
+              </div>
+            )}
 
-                  <TabsContent value="current">
-                    {isLoadingPrices ? (
-                      <LoadingSpinner size={24} />
-                    ) : priceConfigs?.current ? (
-                      <div className="bg-white border border-gray-200 rounded-lg p-4">
-                        <div className="flex justify-between items-center mb-4">
-                          <div>
-                            <h3 className="font-semibold text-lg">
-                              Configuração Atual de Preços
-                            </h3>
-                            <p className="text-sm text-gray-600">
-                              Válida desde:{" "}
-                              {formatDate(priceConfigs.current.validFrom)}
-                              {priceConfigs.current.validTo &&
-                                ` até ${formatDate(
-                                  priceConfigs.current.validTo
-                                )}`}
-                            </p>
-                          </div>
-                          <div className="flex space-x-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() =>
-                                handleEditPriceConfig(priceConfigs.current)
-                              }
-                              className="text-primary"
-                            >
-                              <i className="material-icons text-sm mr-1">
-                                edit
-                              </i>
-                              Editar
-                            </Button>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2">
-                          <div className="bg-gray-50 rounded-lg p-3 text-center">
-                            <h4 className="font-medium mb-1">1 hora</h4>
-                            <p className="text-secondary text-lg font-semibold">
-                              {formatMoney(priceConfigs.current.hour1Price)}
-                            </p>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-3 text-center">
-                            <h4 className="font-medium mb-1">2 horas</h4>
-                            <p className="text-secondary text-lg font-semibold">
-                              {formatMoney(priceConfigs.current.hour2Price)}
-                            </p>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-3 text-center">
-                            <h4 className="font-medium mb-1">3 horas</h4>
-                            <p className="text-secondary text-lg font-semibold">
-                              {formatMoney(priceConfigs.current.hour3Price)}
-                            </p>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-3 text-center">
-                            <h4 className="font-medium mb-1">4 horas</h4>
-                            <p className="text-secondary text-lg font-semibold">
-                              {formatMoney(priceConfigs.current.hour4Price)}
-                            </p>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-3 text-center">
-                            <h4 className="font-medium mb-1">5 horas</h4>
-                            <p className="text-secondary text-lg font-semibold">
-                              {formatMoney(priceConfigs.current.hour5Price)}
-                            </p>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-3 text-center">
-                            <h4 className="font-medium mb-1">6 horas</h4>
-                            <p className="text-secondary text-lg font-semibold">
-                              {formatMoney(priceConfigs.current.hour6Price)}
-                            </p>
-                          </div>
-                          <div className="bg-gray-50 rounded-lg p-3 text-center">
-                            <h4 className="font-medium mb-1">12 horas</h4>
-                            <p className="text-secondary text-lg font-semibold">
-                              {formatMoney(priceConfigs.current.hour12Price)}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 bg-gray-50 rounded-lg">
-                        <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center mx-auto mb-3">
-                          <i className="material-icons text-primary">info</i>
-                        </div>
-                        <h3 className="font-semibold mb-2">
-                          Nenhuma configuração de preço definida
-                        </h3>
-                        <p className="text-gray-600 mb-4">
-                          Esta zona ainda não possui configuração de preços
-                          cadastrada.
-                        </p>
-                        <Button
-                          onClick={handleAddPriceConfig}
-                          className="bg-secondary hover:bg-secondary-light text-white"
-                        >
-                          Adicionar Configuração
-                        </Button>
-                      </div>
-                    )}
-                  </TabsContent>
-
-                  <TabsContent value="history">
-                    {isLoadingPrices ? (
-                      <LoadingSpinner size={24} />
-                    ) : priceConfigs?.history &&
-                      priceConfigs.history.length > 0 ? (
-                      <div className="overflow-x-auto">
-                        <table className="w-full">
-                          <thead>
-                            <tr className="bg-gray-50">
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Período de Validade
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                1h
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                2h
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                3h
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                4h
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                5h
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                6h
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                12h
-                              </th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Ações
-                              </th>
-                            </tr>
-                          </thead>
-                          <tbody className="bg-white divide-y divide-gray-200">
-                            {priceConfigs.history.map((config: any) => (
-                              <tr key={config.id} className="hover:bg-gray-50">
-                                <td className="px-4 py-3 whitespace-nowrap">
-                                  <div className="text-sm font-medium text-gray-900">
-                                    {formatDate(config.validFrom)}
-                                  </div>
-                                  {config.validTo && (
-                                    <div className="text-sm text-gray-500">
-                                      até {formatDate(config.validTo)}
-                                    </div>
-                                  )}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {formatMoney(config.hour1Price)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {formatMoney(config.hour2Price)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {formatMoney(config.hour3Price)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {formatMoney(config.hour4Price)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {formatMoney(config.hour5Price)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {formatMoney(config.hour6Price)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
-                                  {formatMoney(config.hour12Price)}
-                                </td>
-                                <td className="px-4 py-3 whitespace-nowrap text-sm">
-                                  <div className="flex space-x-2">
-                                    <Button
-                                      variant="ghost"
-                                      size="sm"
-                                      onClick={() =>
-                                        handleDeletePriceConfig(config)
-                                      }
-                                      className="text-red-600 hover:text-red-700"
-                                    >
-                                      <i className="material-icons text-sm">
-                                        delete
-                                      </i>
-                                    </Button>
-                                  </div>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    ) : (
-                      <div className="text-center py-6 bg-gray-50 rounded-lg">
-                        <p className="text-gray-600">
-                          Nenhum histórico de preços disponível para esta zona.
-                        </p>
-                      </div>
-                    )}
-                  </TabsContent>
-                </Tabs>
+            {priceConfigs?.history && priceConfigs.history.length > 0 && (
+              <div className="mt-8">
+                <h3 className="font-semibold text-lg mb-4">
+                  Histórico de Preços
+                </h3>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead>
+                      <tr className="bg-gray-50">
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Período de Validade
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          1h
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          2h
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          3h
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          4h
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          5h
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          6h
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          12h
+                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Ações
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {priceConfigs.history.map((config: any) => (
+                        <tr key={config.id} className="hover:bg-gray-50">
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">
+                              {formatDate(config.validFrom)}
+                            </div>
+                            {config.validTo && (
+                              <div className="text-sm text-gray-500">
+                                até {formatDate(config.validTo)}
+                              </div>
+                            )}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatMoney(config.hour1Price)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatMoney(config.hour2Price)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatMoney(config.hour3Price)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatMoney(config.hour4Price)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatMoney(config.hour5Price)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatMoney(config.hour6Price)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
+                            {formatMoney(config.hour12Price)}
+                          </td>
+                          <td className="px-4 py-3 whitespace-nowrap text-sm">
+                            <div className="flex space-x-2">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleDeletePriceConfig(config)}
+                                className="text-red-600 hover:text-red-700"
+                              >
+                                <i className="material-icons text-sm">delete</i>
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </CardContent>
@@ -649,7 +556,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 1 hora</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -663,7 +578,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 2 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -677,7 +600,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 3 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -691,7 +622,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 4 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -705,7 +644,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 5 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -719,7 +666,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 6 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -733,7 +688,15 @@ export default function AdminPrices() {
                     <FormItem className="col-span-2">
                       <FormLabel>Valor 12 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -818,7 +781,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 1 hora</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -832,7 +803,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 2 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -846,7 +825,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 3 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -860,7 +847,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 4 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -874,7 +869,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 5 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -888,7 +891,15 @@ export default function AdminPrices() {
                     <FormItem>
                       <FormLabel>Valor 6 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -902,7 +913,15 @@ export default function AdminPrices() {
                     <FormItem className="col-span-2">
                       <FormLabel>Valor 12 horas</FormLabel>
                       <FormControl>
-                        <Input placeholder="0.00" {...field} />
+                        <Input
+                          type="number"
+                          step="0.01"
+                          min="0"
+                          {...field}
+                          onChange={(e) =>
+                            field.onChange(parseFloat(e.target.value))
+                          }
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -957,21 +976,5 @@ export default function AdminPrices() {
         </AlertDialogContent>
       </AlertDialog>
     </>
-  );
-}
-
-// Label component for the form
-function Label({
-  children,
-  className,
-  ...props
-}: React.LabelHTMLAttributes<HTMLLabelElement>) {
-  return (
-    <label
-      className={`block text-sm font-medium text-gray-700 ${className || ""}`}
-      {...props}
-    >
-      {children}
-    </label>
   );
 }
