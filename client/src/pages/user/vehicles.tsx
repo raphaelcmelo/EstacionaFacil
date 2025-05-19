@@ -134,7 +134,7 @@ export default function UserVehicles() {
     },
     onSuccess: () => {
       console.log("veiculo adicionado");
-      queryClient.invalidateQueries({ queryKey: ["/api/vehicles"] });
+      queryClient.invalidateQueries({ queryKey: ["vehicles"] });
       toast({
         title: "Veículo adicionado",
         description: "Veículo adicionado com sucesso.",
@@ -154,7 +154,11 @@ export default function UserVehicles() {
 
   const editVehicleMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: VehicleFormData }) => {
-      return await apiRequest("PUT", `/api/vehicles/${id}`, data);
+      return await apiRequest(
+        "PUT",
+        `${baseUrl}/v1/estaciona-facil/veiculo/editar/${id}`,
+        data
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
@@ -178,7 +182,10 @@ export default function UserVehicles() {
 
   const deleteVehicleMutation = useMutation({
     mutationFn: async (id: string) => {
-      return await apiRequest("DELETE", `/api/vehicles/${id}`);
+      return await apiRequest(
+        "DELETE",
+        `${baseUrl}/v1/estaciona-facil/veiculo/deletar/${id}`
+      );
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
