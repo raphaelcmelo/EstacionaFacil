@@ -19,11 +19,23 @@ export async function apiRequest(
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 
+  console.log("API Request:", {
+    method,
+    url,
+    data,
+    headers,
+  });
+
   const res = await fetch(url, {
     method,
     headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
+  });
+
+  console.log("API Response:", {
+    status: res.status,
+    statusText: res.statusText,
   });
 
   await throwIfResNotOk(res);
@@ -65,6 +77,12 @@ export const queryClient = new QueryClient({
     },
     mutations: {
       retry: false,
+      onError: (error) => {
+        console.error("Mutation error:", error);
+      },
+      onSuccess: (data) => {
+        console.log("Mutation success:", data);
+      },
     },
   },
 });

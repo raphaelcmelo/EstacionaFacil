@@ -43,7 +43,7 @@ import { ptBR } from "date-fns/locale";
 import { AlertCircle } from "lucide-react";
 
 interface PriceConfig {
-  id: number;
+  id: string;
   validFrom: string;
   validTo: string | null;
   hour1Price: number;
@@ -53,6 +53,8 @@ interface PriceConfig {
   hour5Price: number;
   hour6Price: number;
   hour12Price: number;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 interface PriceConfigsResponse {
@@ -93,12 +95,17 @@ export default function AdminPrices() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedPriceConfig, setSelectedPriceConfig] = useState<any>(null);
+  const [selectedPriceConfig, setSelectedPriceConfig] =
+    useState<PriceConfig | null>(null);
 
   // Get price configs
   const { data: priceConfigs, isLoading: isLoadingPrices } =
     useQuery<PriceConfigsResponse>({
-      queryKey: ["/api/admin/prices"],
+      queryKey: ["/v1/estaciona-facil/precos"],
+      queryFn: async () => {
+        const response = await apiRequest("GET", "/v1/estaciona-facil/precos");
+        return response;
+      },
       enabled: !!user && (user.role === "MANAGER" || user.role === "ADMIN"),
     });
 
@@ -136,11 +143,11 @@ export default function AdminPrices() {
   // Mutations
   const addPriceConfigMutation = useMutation({
     mutationFn: async (data: PriceConfigFormData) => {
-      return await apiRequest("POST", "/api/admin/prices", data);
+      return await apiRequest("POST", "/v1/estaciona-facil/precos/criar", data);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/prices"],
+        queryKey: ["/v1/estaciona-facil/precos"],
       });
       toast({
         title: "Configuração de preço adicionada",
@@ -161,44 +168,38 @@ export default function AdminPrices() {
   });
 
   const editPriceConfigMutation = useMutation({
-    mutationFn: async ({
-      id,
-      data,
-    }: {
-      id: number;
+    mutationFn: async (variables: {
+      id: string;
       data: PriceConfigFormData;
     }) => {
-      return await apiRequest("PUT", `/api/admin/prices/${id}`, data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({
-        queryKey: ["/api/admin/prices"],
-      });
-      toast({
-        title: "Configuração de preço atualizada",
-        description: "Configuração de preço atualizada com sucesso.",
-      });
-      setIsEditDialogOpen(false);
-      editForm.reset();
-    },
-    onError: (error: any) => {
-      toast({
-        title: "Erro",
-        description:
-          error.message ||
-          "Erro ao atualizar configuração de preço. Tente novamente.",
-        variant: "destructive",
-      });
+      const { id, data } = variables;
+
+      const formattedData = {
+        ...data,
+        validFrom: new Date(data.validFrom).toISOString(),
+        validTo: data.validTo
+          ? new Date(data.validTo).toISOString()
+          : undefined,
+      };
+
+      const url = `/v1/estaciona-facil/precos/${id}`;
+
+      try {
+        const response = await apiRequest("PATCH", url, formattedData);
+        return response;
+      } catch (error) {
+        throw error;
+      }
     },
   });
 
   const deletePriceConfigMutation = useMutation({
-    mutationFn: async (id: number) => {
-      return await apiRequest("DELETE", `/api/admin/prices/${id}`);
+    mutationFn: async (id: string) => {
+      return await apiRequest("DELETE", `/v1/estaciona-facil/precos/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({
-        queryKey: ["/api/admin/prices"],
+        queryKey: ["/v1/estaciona-facil/precos"],
       });
       toast({
         title: "Configuração de preço excluída",
@@ -223,7 +224,8 @@ export default function AdminPrices() {
     setIsAddDialogOpen(true);
   };
 
-  const handleEditPriceConfig = (priceConfig: any) => {
+  const handleEditPriceConfig = (priceConfig: PriceConfig) => {
+    setSelectedPriceConfig(priceConfig);
     editForm.reset({
       validFrom: format(new Date(priceConfig.validFrom), "yyyy-MM-dd'T'HH:mm", {
         locale: ptBR,
@@ -241,17 +243,22 @@ export default function AdminPrices() {
       hour6Price: priceConfig.hour6Price,
       hour12Price: priceConfig.hour12Price,
     });
-    setSelectedPriceConfig(priceConfig);
     setIsEditDialogOpen(true);
   };
 
-  const handleDeletePriceConfig = (priceConfig: any) => {
+  const handleCloseEditDialog = () => {
+    setIsEditDialogOpen(false);
+    setSelectedPriceConfig(null);
+    editForm.reset();
+  };
+
+  const handleDeletePriceConfig = (priceConfig: PriceConfig) => {
     setSelectedPriceConfig(priceConfig);
     setIsDeleteDialogOpen(true);
   };
 
   const confirmDeletePriceConfig = () => {
-    if (selectedPriceConfig) {
+    if (selectedPriceConfig?.id) {
       deletePriceConfigMutation.mutate(selectedPriceConfig.id);
     }
   };
@@ -260,9 +267,50 @@ export default function AdminPrices() {
     addPriceConfigMutation.mutate(data);
   };
 
-  const onEditSubmit = (data: PriceConfigFormData) => {
-    if (selectedPriceConfig) {
-      editPriceConfigMutation.mutate({ id: selectedPriceConfig.id, data });
+  const onEditSubmit = async (data: PriceConfigFormData) => {
+    if (!selectedPriceConfig?.id) {
+      toast({
+        title: "Erro",
+        description: "ID da configuração de preço não encontrado",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      const formattedData = {
+        ...data,
+        validFrom: data.validFrom,
+        validTo: data.validTo || undefined,
+      };
+
+      const response = await apiRequest(
+        "PATCH",
+        `/v1/estaciona-facil/precos/${selectedPriceConfig.id}`,
+        formattedData
+      );
+
+      queryClient.invalidateQueries({
+        queryKey: ["/v1/estaciona-facil/precos"],
+      });
+
+      toast({
+        title: "Configuração de preço atualizada",
+        description: "Configuração de preço atualizada com sucesso.",
+      });
+
+      setIsEditDialogOpen(false);
+      setSelectedPriceConfig(null);
+      editForm.reset();
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description:
+          error instanceof Error
+            ? error.message
+            : "Erro ao atualizar configuração de preço. Tente novamente.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -297,10 +345,7 @@ export default function AdminPrices() {
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gerenciar Preços</h2>
-        <Button
-          onClick={handleAddPriceConfig}
-          className="bg-secondary hover:bg-secondary-light text-white"
-        >
+        <Button onClick={handleAddPriceConfig} variant="secondary">
           <i className="material-icons mr-2">add</i>
           Nova Configuração de Preço
         </Button>
@@ -398,10 +443,7 @@ export default function AdminPrices() {
                 <p className="text-gray-600 mb-4">
                   Ainda não existe configuração de preços cadastrada.
                 </p>
-                <Button
-                  onClick={handleAddPriceConfig}
-                  className="bg-secondary hover:bg-secondary-light text-white"
-                >
+                <Button onClick={handleAddPriceConfig} variant="secondary">
                   Adicionar Configuração
                 </Button>
               </div>
@@ -446,7 +488,7 @@ export default function AdminPrices() {
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {priceConfigs.history.map((config: any) => (
+                      {priceConfigs.history.map((config: PriceConfig) => (
                         <tr key={config.id} className="hover:bg-gray-50">
                           <td className="px-4 py-3 whitespace-nowrap">
                             <div className="text-sm font-medium text-gray-900">
@@ -561,9 +603,12 @@ export default function AdminPrices() {
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -583,9 +628,12 @@ export default function AdminPrices() {
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -605,9 +653,12 @@ export default function AdminPrices() {
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -627,9 +678,12 @@ export default function AdminPrices() {
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -649,9 +703,12 @@ export default function AdminPrices() {
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -671,9 +728,12 @@ export default function AdminPrices() {
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -693,9 +753,12 @@ export default function AdminPrices() {
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -714,7 +777,7 @@ export default function AdminPrices() {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-primary hover:bg-primary-light"
+                  variant="default"
                   disabled={addPriceConfigMutation.isPending}
                 >
                   {addPriceConfigMutation.isPending
@@ -739,7 +802,9 @@ export default function AdminPrices() {
 
           <Form {...editForm}>
             <form
-              onSubmit={editForm.handleSubmit(onEditSubmit)}
+              onSubmit={editForm.handleSubmit((data) => {
+                onEditSubmit(data);
+              })}
               className="space-y-4"
             >
               <FormField
@@ -779,16 +844,19 @@ export default function AdminPrices() {
                   name="hour1Price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor 1 hora</FormLabel>
+                      <FormLabel>Valor 1 hora (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -801,16 +869,19 @@ export default function AdminPrices() {
                   name="hour2Price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor 2 horas</FormLabel>
+                      <FormLabel>Valor 2 horas (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -823,16 +894,19 @@ export default function AdminPrices() {
                   name="hour3Price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor 3 horas</FormLabel>
+                      <FormLabel>Valor 3 horas (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -845,16 +919,19 @@ export default function AdminPrices() {
                   name="hour4Price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor 4 horas</FormLabel>
+                      <FormLabel>Valor 4 horas (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -867,16 +944,19 @@ export default function AdminPrices() {
                   name="hour5Price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor 5 horas</FormLabel>
+                      <FormLabel>Valor 5 horas (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -889,16 +969,19 @@ export default function AdminPrices() {
                   name="hour6Price"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Valor 6 horas</FormLabel>
+                      <FormLabel>Valor 6 horas (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -911,16 +994,19 @@ export default function AdminPrices() {
                   name="hour12Price"
                   render={({ field }) => (
                     <FormItem className="col-span-2">
-                      <FormLabel>Valor 12 horas</FormLabel>
+                      <FormLabel>Valor 12 horas (R$)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
                           step="0.01"
                           min="0"
                           {...field}
-                          onChange={(e) =>
-                            field.onChange(parseFloat(e.target.value))
-                          }
+                          onChange={(e) => {
+                            const value = parseFloat(e.target.value);
+                            if (!isNaN(value)) {
+                              field.onChange(Number(value.toFixed(2)));
+                            }
+                          }}
                         />
                       </FormControl>
                       <FormMessage />
@@ -933,13 +1019,13 @@ export default function AdminPrices() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => setIsEditDialogOpen(false)}
+                  onClick={handleCloseEditDialog}
                 >
                   Cancelar
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-primary hover:bg-primary-light"
+                  variant="default"
                   disabled={editPriceConfigMutation.isPending}
                 >
                   {editPriceConfigMutation.isPending ? "Salvando..." : "Salvar"}
