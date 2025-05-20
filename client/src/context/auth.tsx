@@ -119,9 +119,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async (): Promise<void> => {
     setIsLoading(true);
     try {
-      await fetch("/api/auth/logout", {
+      await fetch(`${baseUrl}/v1/gestor-usuarios/auth/logout`, {
         method: "POST",
         credentials: "include",
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+        },
       });
       setUser(null);
       localStorage.removeItem("accessToken");
