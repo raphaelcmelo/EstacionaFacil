@@ -9,10 +9,12 @@ import { deletarPreco } from "../controllers/preco/deletar";
 
 const precoRoutes = Router();
 
-precoRoutes.get("/", auth(), (req, res, next) => {
+// Rota pública para listar preços
+precoRoutes.get("/", (req, res, next) => {
   listarPrecos(req, res).catch(next);
 });
 
+// Rotas que requerem autenticação
 precoRoutes.post("/criar", auth(), validate(precoSchema), (req, res, next) => {
   criarPreco(req, res).catch(next);
 });

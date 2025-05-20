@@ -35,6 +35,22 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+interface Vehicle {
+  id: string;
+  placa: string;
+  modelo: string;
+}
+
+interface PriceConfig {
+  hour1Price: number;
+  hour2Price: number;
+  hour3Price: number;
+  hour4Price: number;
+  hour5Price: number;
+  hour6Price: number;
+  hour12Price: number;
+}
+
 // Form schema
 const quickBuySchema = z.object({
   licensePlate: z
@@ -102,15 +118,22 @@ export default function QuickBuy() {
   const selectedPaymentMethod = quickBuyForm.watch("paymentMethod");
 
   // Get user vehicles if logged in
-  const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery({
+  const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery<
+    Vehicle[]
+  >({
     queryKey: ["/v1/estaciona-facil/veiculo/listar"],
     enabled: !!user,
   });
 
   // Get current price config
-  const { data: priceConfig, isLoading: isLoadingPrices } = useQuery({
-    queryKey: ["/api/prices"],
-  });
+  const { data: priceConfig, isLoading: isLoadingPrices } =
+    useQuery<PriceConfig>({
+      queryKey: ["/v1/estaciona-facil/precos"],
+      queryFn: async () => {
+        const response = await apiRequest("GET", "/v1/estaciona-facil/precos");
+        return response.current;
+      },
+    });
 
   // Watch form fields for manual input
   const licensePlateValue = quickBuyForm.watch("licensePlate");
@@ -127,7 +150,7 @@ export default function QuickBuy() {
       quickBuyForm.setValue("licensePlate", "");
       quickBuyForm.setValue("model", "");
     } else {
-      const vehicle = userVehicles.find((v: any) => v.id.toString() === value);
+      const vehicle = userVehicles?.find((v) => v.id.toString() === value);
       if (vehicle) {
         quickBuyForm.setValue("licensePlate", vehicle.placa);
         quickBuyForm.setValue("model", vehicle.modelo);
@@ -140,25 +163,25 @@ export default function QuickBuy() {
     if (priceConfig && selectedDuration) {
       switch (selectedDuration) {
         case 1:
-          setSelectedHourPrice(priceConfig.hour1Price);
+          setSelectedHourPrice(priceConfig.hour1Price.toString());
           break;
         case 2:
-          setSelectedHourPrice(priceConfig.hour2Price);
+          setSelectedHourPrice(priceConfig.hour2Price.toString());
           break;
         case 3:
-          setSelectedHourPrice(priceConfig.hour3Price);
+          setSelectedHourPrice(priceConfig.hour3Price.toString());
           break;
         case 4:
-          setSelectedHourPrice(priceConfig.hour4Price);
+          setSelectedHourPrice(priceConfig.hour4Price.toString());
           break;
         case 5:
-          setSelectedHourPrice(priceConfig.hour5Price);
+          setSelectedHourPrice(priceConfig.hour5Price.toString());
           break;
         case 6:
-          setSelectedHourPrice(priceConfig.hour6Price);
+          setSelectedHourPrice(priceConfig.hour6Price.toString());
           break;
         case 12:
-          setSelectedHourPrice(priceConfig.hour12Price);
+          setSelectedHourPrice(priceConfig.hour12Price.toString());
           break;
         default:
           setSelectedHourPrice("0.00");
@@ -252,20 +275,22 @@ export default function QuickBuy() {
                   {/* <Separator className="flex-grow ml-4" /> */}
                 </div>
 
-                {user && (
+                {user ? (
                   <div className="mb-6">
-                    <Label className="block text-sm font-medium text-gray-700 mb-2">
-                      Selecione um veículo:
-                    </Label>
+                    <Label className="mb-2 block">Selecione um veículo</Label>
                     <Select
                       value={selectedVehicle || ""}
                       onValueChange={handleVehicleSelection}
+                      disabled={isVehicleSelectionDisabled}
                     >
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Selecione" />
+                      <SelectTrigger>
+                        <SelectValue placeholder="Selecione um veículo" />
                       </SelectTrigger>
                       <SelectContent>
-                        {userVehicles?.map((vehicle: any) => (
+                        <SelectItem value="new">
+                          Adicionar novo veículo
+                        </SelectItem>
+                        {userVehicles?.map((vehicle) => (
                           <SelectItem
                             key={vehicle.id}
                             value={vehicle.id.toString()}
@@ -273,13 +298,10 @@ export default function QuickBuy() {
                             {vehicle.placa} - {vehicle.modelo}
                           </SelectItem>
                         ))}
-                        <SelectItem value="new">+ Novo veículo</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
-                )}
-
-                {selectedVehicle === "new" && (
+                ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                     <FormField
                       control={quickBuyForm.control}
@@ -332,8 +354,12 @@ export default function QuickBuy() {
                   <Button
                     type="button"
                     variant="default"
-                    onClick={() => {
-                      const isValid = quickBuyForm.trigger([
+                    onClick={async () => {
+                      if (selectedVehicle && selectedVehicle !== "new") {
+                        setCurrentStep(2);
+                        return;
+                      }
+                      const isValid = await quickBuyForm.trigger([
                         "licensePlate",
                         "model",
                       ]);
@@ -364,47 +390,47 @@ export default function QuickBuy() {
                     Selecione a duração:
                   </Label>
                   <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
-                    {priceConfig && typeof priceConfig === "object" && (
+                    {priceConfig && (
                       <>
                         <DurationOption
                           hours={1}
-                          price={priceConfig.hour1Price as number}
+                          price={priceConfig.hour1Price}
                           selected={selectedDuration === 1}
                           onClick={() => setSelectedDuration(1)}
                         />
                         <DurationOption
                           hours={2}
-                          price={priceConfig.hour2Price as number}
+                          price={priceConfig.hour2Price}
                           selected={selectedDuration === 2}
                           onClick={() => setSelectedDuration(2)}
                         />
                         <DurationOption
                           hours={3}
-                          price={priceConfig.hour3Price as number}
+                          price={priceConfig.hour3Price}
                           selected={selectedDuration === 3}
                           onClick={() => setSelectedDuration(3)}
                         />
                         <DurationOption
                           hours={4}
-                          price={priceConfig.hour4Price as number}
+                          price={priceConfig.hour4Price}
                           selected={selectedDuration === 4}
                           onClick={() => setSelectedDuration(4)}
                         />
                         <DurationOption
                           hours={5}
-                          price={priceConfig.hour5Price as number}
+                          price={priceConfig.hour5Price}
                           selected={selectedDuration === 5}
                           onClick={() => setSelectedDuration(5)}
                         />
                         <DurationOption
                           hours={6}
-                          price={priceConfig.hour6Price as number}
+                          price={priceConfig.hour6Price}
                           selected={selectedDuration === 6}
                           onClick={() => setSelectedDuration(6)}
                         />
                         <DurationOption
                           hours={12}
-                          price={priceConfig.hour12Price as number}
+                          price={priceConfig.hour12Price}
                           selected={selectedDuration === 12}
                           onClick={() => setSelectedDuration(12)}
                         />
@@ -652,7 +678,7 @@ export default function QuickBuy() {
                   </Button>
                   <Button
                     type="submit"
-                    className="bg-secondary hover:bg-secondary-light text-white"
+                    variant="secondary"
                     disabled={isSubmitting || purchasePermitMutation.isPending}
                   >
                     {isSubmitting ? "Processando..." : "Confirmar e Pagar"}
