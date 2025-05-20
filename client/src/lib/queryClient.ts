@@ -33,11 +33,6 @@ export async function apiRequest(
     credentials: "include",
   });
 
-  console.log("API Response:", {
-    status: res.status,
-    statusText: res.statusText,
-  });
-
   await throwIfResNotOk(res);
   return res.json();
 }
