@@ -63,6 +63,7 @@ const quickBuySchema = z.object({
     PaymentMethod.CREDIT_CARD,
     PaymentMethod.DEBIT_CARD,
     PaymentMethod.PIX,
+    PaymentMethod.TESTE,
   ]),
 });
 
@@ -193,7 +194,11 @@ export default function QuickBuy() {
   // Purchase permit mutation
   const purchasePermitMutation = useMutation({
     mutationFn: async (data: QuickBuyFormData) => {
-      const response = await apiRequest("POST", "/api/permits/quick-buy", data);
+      const response = await apiRequest(
+        "POST",
+        "/v1/estaciona-facil/permits/quick-buy",
+        data
+      );
       return await response.json();
     },
     onSuccess: (data) => {
@@ -253,10 +258,14 @@ export default function QuickBuy() {
       </Helmet>
 
       <Card className="max-w-2xl mx-auto">
-        <CardHeader className="p-6 flex justify-between items-center">
-          <CardTitle className="text-xl">Compra Rápida de Permissão</CardTitle>
+        <CardHeader className="flex-row items-center justify-between">
+          <CardTitle className="text-xl m-0">
+            Compra Rápida de Permissão
+          </CardTitle>
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
-            <i className="material-icons">close</i>
+            <i className="material-icons text-xl" style={{ lineHeight: 1 }}>
+              close
+            </i>
           </Button>
         </CardHeader>
 
@@ -568,6 +577,22 @@ export default function QuickBuy() {
                               </Label>
                               <span className="inline-block w-8 h-5 bg-green-500 rounded flex items-center justify-center text-white text-xs font-bold">
                                 PIX
+                              </span>
+                            </div>
+                            <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
+                              <RadioGroupItem
+                                value={PaymentMethod.TESTE}
+                                id="teste"
+                                className="mr-3"
+                              />
+                              <Label
+                                htmlFor="teste"
+                                className="flex-grow cursor-pointer"
+                              >
+                                Teste
+                              </Label>
+                              <span className="inline-block w-8 h-5 bg-yellow-500 rounded flex items-center justify-center text-white text-xs font-bold">
+                                TESTE
                               </span>
                             </div>
                           </RadioGroup>
