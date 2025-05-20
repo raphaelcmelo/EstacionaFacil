@@ -8,7 +8,7 @@ import { LoadingSpinner } from "@/components/ui/spinner";
 import { Helmet } from "react-helmet";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -51,7 +51,7 @@ const vehicleSchema = z.object({
         /^[A-Z]{3}[0-9]{4}$/.test(val) || // Padrão antigo: ABC1234
         /^[A-Z]{3}[0-9][A-Z][0-9]{2}$/.test(val), // Padrão Mercosul: ABC1D23
       {
-        message: "Placa inválida. Use o formato ABC-1234 ou ABC1D23.",
+        message: "Placa inválida. Use o formato ABC1234 ou ABC1D23.",
       }
     )
     .refine((val) => val.length === 7, {
@@ -208,21 +208,23 @@ export default function UserVehicles() {
 
   // Handle opening the edit dialog
   const handleEditVehicle = (vehicle: Vehicle) => {
+    setSelectedVehicle(vehicle);
     editForm.reset({
       placa: vehicle.placa,
       modelo: vehicle.modelo,
     });
-    setSelectedVehicle(vehicle);
     setIsEditDialogOpen(true);
   };
 
   // Check if we need to preload edit form based on URL param
-  if (editId && vehicles && !isEditDialogOpen) {
-    const vehicleToEdit = vehicles.find((v) => v.id === editId);
-    if (vehicleToEdit) {
-      handleEditVehicle(vehicleToEdit);
+  useEffect(() => {
+    if (editId && vehicles && !isEditDialogOpen) {
+      const vehicleToEdit = vehicles.find((v) => v.id === editId);
+      if (vehicleToEdit) {
+        handleEditVehicle(vehicleToEdit);
+      }
     }
-  }
+  }, [editId, vehicles, isEditDialogOpen]);
 
   // Handlers
   const onAddSubmit = (data: VehicleFormData) => {
