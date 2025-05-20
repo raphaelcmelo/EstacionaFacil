@@ -6,14 +6,6 @@ import ApiError from "../utils/ApiError";
 const validate =
   (schema: z.ZodObject<any>) =>
   (req: Request, res: Response, next: NextFunction) => {
-    console.log("Validating request:", {
-      method: req.method,
-      url: req.url,
-      params: req.params,
-      query: req.query,
-      body: req.body,
-    });
-
     try {
       const parsedObject = schema.parse({
         params: req.params,
@@ -21,7 +13,6 @@ const validate =
         body: req.body,
       });
 
-      console.log("Validation successful:", parsedObject);
       Object.assign(req, parsedObject);
       return next();
     } catch (error) {

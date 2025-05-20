@@ -52,8 +52,8 @@ export default function PurchaseOptions() {
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {/* Opção de compra sem cadastro */}
-          <Card className="relative overflow-hidden border-2 hover:border-primary hover:shadow-lg transition-all duration-300">
-            <div className="absolute top-0 right-0 p-2 bg-primary text-white rounded-bl-lg font-medium">
+          <Card className="relative overflow-hidden border-2 hover:border-secondary hover:shadow-lg transition-all duration-300">
+            <div className="absolute top-0 right-0 p-2 bg-secondary text-white rounded-bl-lg font-medium">
               Rápido
             </div>
             <CardHeader>
@@ -83,7 +83,11 @@ export default function PurchaseOptions() {
               </ul>
             </CardContent>
             <CardFooter>
-              <Button className="w-full" onClick={() => navigate("/quick-buy")}>
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => navigate("/quick-buy")}
+              >
                 Comprar sem cadastro
               </Button>
             </CardFooter>

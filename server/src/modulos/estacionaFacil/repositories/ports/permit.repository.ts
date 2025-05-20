@@ -36,4 +36,8 @@ export interface PermitRepository {
   criar(data: PermitInput): Promise<PermitDocument>;
   buscarPorPlaca(licensePlate: string): Promise<PermitDocument | null>;
   atualizarStatus(id: string, status: string): Promise<PermitDocument | null>;
+  buscarAtivasPorUsuario(
+    userId: string,
+    dataAtual: Date
+  ): Promise<PermitDocument[]>;
 }

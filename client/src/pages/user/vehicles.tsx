@@ -308,7 +308,17 @@ export default function UserVehicles() {
                       </Button>
                     </div>
                   </div>
-                  <div className="text-gray-600">{vehicle.modelo}</div>
+                  <div className="text-gray-600 mb-3">{vehicle.modelo}</div>
+                  <Button
+                    variant="default"
+                    className="w-full text-base py-6 mt-2 flex items-center justify-center"
+                    onClick={() =>
+                      setLocation(`/quick-buy?veiculo=${vehicle.id}`)
+                    }
+                  >
+                    <i className="material-icons mr-2">shopping_cart</i>
+                    Comprar Permissão
+                  </Button>
                 </div>
               ))
             ) : (

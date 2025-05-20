@@ -93,6 +93,9 @@ export default function QuickBuy() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [permitData, setPermitData] = useState<any>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<string | null>(null);
+  const [vehicleFromParams, setVehicleFromParams] = useState<Vehicle | null>(
+    null
+  );
 
   // Form for quick buy
   const quickBuyForm = useForm<QuickBuyFormData>({
@@ -119,6 +122,8 @@ export default function QuickBuy() {
   const selectedPaymentMethod = quickBuyForm.watch("paymentMethod");
 
   // Get user vehicles if logged in
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
   const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery<
     Vehicle[]
   >({
@@ -190,6 +195,25 @@ export default function QuickBuy() {
       quickBuyForm.setValue("durationHours", selectedDuration);
     }
   }, [selectedDuration, priceConfig]);
+
+  // Atualiza o useEffect para setar o vehicleFromParams
+  useEffect(() => {
+    const params = new URLSearchParams(location.split("?")[1]);
+    const idParam = params.get("veiculo");
+    if (idParam && userVehicles && userVehicles.length > 0) {
+      const veiculoEncontrado = userVehicles.find(
+        (v) => v.id.toString() === idParam
+      );
+      if (veiculoEncontrado) {
+        setVehicleFromParams(veiculoEncontrado);
+        setSelectedVehicle(veiculoEncontrado.id.toString());
+        quickBuyForm.setValue("licensePlate", veiculoEncontrado.placa);
+        quickBuyForm.setValue("model", veiculoEncontrado.modelo);
+      }
+    } else {
+      setVehicleFromParams(null);
+    }
+  }, [location, userVehicles]);
 
   // Purchase permit mutation
   const purchasePermitMutation = useMutation({
@@ -290,10 +314,10 @@ export default function QuickBuy() {
                     <Select
                       value={selectedVehicle || ""}
                       onValueChange={handleVehicleSelection}
-                      disabled={isVehicleSelectionDisabled}
+                      disabled={!!vehicleFromParams}
                     >
                       <SelectTrigger>
-                        <SelectValue placeholder="Selecione um veículo" />
+                        <SelectValue placeholder="Selecione um veículo ou cadastre novo" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="new">
@@ -309,6 +333,55 @@ export default function QuickBuy() {
                         ))}
                       </SelectContent>
                     </Select>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                      <FormField
+                        control={quickBuyForm.control}
+                        name="licensePlate"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Placa do Veículo</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="ABC1234"
+                                value={field.value}
+                                onChange={field.onChange}
+                                disabled={
+                                  !!vehicleFromParams ||
+                                  (selectedVehicle !== null &&
+                                    selectedVehicle !== "new")
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                            <p className="text-xs text-gray-500 mt-1">
+                              Formato: ABC1234 ou ABC1D23
+                            </p>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={quickBuyForm.control}
+                        name="model"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Modelo do Veículo</FormLabel>
+                            <FormControl>
+                              <Input
+                                placeholder="Ex: Fiat Palio"
+                                value={field.value}
+                                onChange={field.onChange}
+                                disabled={
+                                  !!vehicleFromParams ||
+                                  (selectedVehicle !== null &&
+                                    selectedVehicle !== "new")
+                                }
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">

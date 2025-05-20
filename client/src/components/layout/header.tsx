@@ -87,6 +87,12 @@ export default function Header() {
                       >
                         Histórico
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => navigate("/permissoes-ativas")}
+                      >
+                        Permissões Ativas
+                      </DropdownMenuItem>
                     </>
                   )}
 

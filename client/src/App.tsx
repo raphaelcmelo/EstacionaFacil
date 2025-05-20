@@ -26,6 +26,7 @@ import AdminPrices from "@/pages/admin/prices";
 import { useAuth } from "@/context/auth";
 import { Suspense, lazy } from "react";
 import { LoadingSpinner } from "@/components/ui/spinner";
+import { PermissoesAtivas } from "./pages/PermissoesAtivas";
 
 function ProtectedRoute({
   component: Component,
@@ -133,6 +134,16 @@ function Router() {
             <ProtectedRoute
               component={AdminPrices}
               roles={["MANAGER", "ADMIN"]}
+            />
+          )}
+        </Route>
+
+        {/* New route */}
+        <Route path="/permissoes-ativas">
+          {() => (
+            <ProtectedRoute
+              component={PermissoesAtivas}
+              roles={["CITIZEN", "FISCAL", "MANAGER", "ADMIN"]}
             />
           )}
         </Route>

@@ -104,6 +104,16 @@ export default function MobileNav() {
           <i className="material-icons">directions_car</i>
           <span className="text-xs mt-1">Veículos</span>
         </Link>
+        <Link
+          href="/permissoes-ativas"
+          className={cn(
+            "flex flex-col items-center py-2 px-3",
+            isActive("/permissoes-ativas") ? "text-primary" : "text-gray-600"
+          )}
+        >
+          <i className="material-icons">receipt_long</i>
+          <span className="text-xs mt-1">Permissões</span>
+        </Link>
         {(user.role === "FISCAL" || user.role === "ADMIN") && (
           <Link
             href="/fiscal/verify"

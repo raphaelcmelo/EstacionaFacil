@@ -1,6 +1,7 @@
 import { PermitModel } from "../model/permit.model";
 import { PermitRepository } from "../ports/permit.repository";
 import { PermitInput } from "../ports/permit.repository";
+import { PaymentStatus } from "@shared/schema";
 
 export class MongoPermitRepository implements PermitRepository {
   async criar(data: PermitInput) {
@@ -24,5 +25,15 @@ export class MongoPermitRepository implements PermitRepository {
       { new: true }
     );
     return permit;
+  }
+
+  async buscarAtivasPorUsuario(userId: string, dataAtual: Date) {
+    const permissoes = await PermitModel.find({
+      userId,
+      endTime: { $gt: dataAtual },
+      paymentStatus: PaymentStatus.COMPLETED,
+    }).sort({ endTime: 1 });
+
+    return permissoes;
   }
 }
