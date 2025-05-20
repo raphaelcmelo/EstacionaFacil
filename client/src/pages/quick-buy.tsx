@@ -382,7 +382,7 @@ export default function QuickBuy() {
                     </div>
                     <span className="font-semibold">Tempo Desejado</span>
                   </div>
-                  <Separator className="flex-grow ml-4" />
+                  {/* <Separator className="flex-grow ml-4" /> */}
                 </div>
 
                 <div className="mb-6">
@@ -451,7 +451,7 @@ export default function QuickBuy() {
                     </div>
                     <span className="text-gray-500">Pagamento</span>
                   </div>
-                  <Separator className="flex-grow ml-4" />
+                  {/* <Separator className="flex-grow ml-4" /> */}
                 </div>
 
                 <div className="flex justify-between space-x-3">
@@ -490,7 +490,7 @@ export default function QuickBuy() {
                     </div>
                     <span className="font-semibold">Pagamento</span>
                   </div>
-                  <Separator className="flex-grow ml-4" />
+                  {/* <Separator className="flex-grow ml-4" /> */}
                 </div>
 
                 <div className="mb-6">
