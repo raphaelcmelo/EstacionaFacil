@@ -50,7 +50,7 @@ export default function Home() {
             </div>
             <div className="md:w-1/2 h-48 md:h-auto">
               <img
-                src="https://sdmntpreastus.oaiusercontent.com/files/00000000-90fc-61f9-826e-578efce1429f/raw?se=2025-05-21T18%3A14%3A44Z&sp=r&sv=2024-08-04&sr=b&scid=27648057-b71b-536c-930e-173dd4f0fbd5&skoid=b64a43d9-3512-45c2-98b4-dea55d094240&sktid=a48cca56-e6da-484e-a814-9c849652bcb3&skt=2025-05-21T13%3A53%3A17Z&ske=2025-05-22T13%3A53%3A17Z&sks=b&skv=2024-08-04&sig=IKb8PANFNqz/wj1J2P1i1SEZjB34DlE8qfVYU9mbLzs%3D"
+                src="https://i.postimg.cc/g0dymrh8/EF-1.png"
                 alt="Estacionamento municipal rotativo"
                 className="w-[800px] h-[400px] object-cover"
               />

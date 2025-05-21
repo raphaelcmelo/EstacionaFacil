@@ -8,6 +8,7 @@ import { DurationOption } from "@/components/ui/duration-option";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
+import { FaPix } from "react-icons/fa6";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet";
@@ -96,6 +97,7 @@ export default function QuickBuy() {
   const [vehicleFromParams, setVehicleFromParams] = useState<Vehicle | null>(
     null
   );
+  const [showReceipt, setShowReceipt] = useState(false);
 
   // Form for quick buy
   const quickBuyForm = useForm<QuickBuyFormData>({
@@ -251,11 +253,12 @@ export default function QuickBuy() {
         "/v1/estaciona-facil/permits/quick-buy",
         data
       );
-      return await response.json();
+      return response;
     },
     onSuccess: (data) => {
       setPermitData(data);
-      navigate("/permit-confirmation?id=" + data.id);
+      setShowReceipt(true);
+      setIsSubmitting(false);
     },
     onError: (error: any) => {
       setIsSubmitting(false);
@@ -297,6 +300,104 @@ export default function QuickBuy() {
 
   if (isLoadingPrices || (user && isLoadingVehicles)) {
     return <LoadingSpinner />;
+  }
+
+  if (showReceipt && permitData) {
+    return (
+      <Card className="max-w-md mx-auto">
+        <CardContent className="p-6">
+          <div className="text-center mb-6">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">
+              <i className="material-icons text-green-600 text-3xl">
+                check_circle
+              </i>
+            </div>
+            <h2 className="text-xl font-bold text-gray-800">
+              Permissão Adquirida!
+            </h2>
+            <p className="text-gray-600">
+              Seu pagamento foi processado com sucesso.
+            </p>
+          </div>
+
+          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Código de Consulta:</span>
+              <span className="font-semibold">
+                {permitData.transactionCode}
+              </span>
+            </div>
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Placa:</span>
+              <span className="font-semibold">{permitData.vehicleId}</span>
+            </div>
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Validade:</span>
+              <span className="font-semibold">
+                {formatDateTime(permitData.startTime)} até{" "}
+                {formatDateTime(permitData.endTime)}
+              </span>
+            </div>
+            <div className="flex justify-between mb-2">
+              <span className="text-gray-600">Duração:</span>
+              <span className="font-semibold">
+                {permitData.durationHours}{" "}
+                {permitData.durationHours === 1 ? "hora" : "horas"}
+              </span>
+            </div>
+            <div className="flex justify-between text-lg border-t border-gray-300 pt-2 mt-2">
+              <span className="font-semibold">Valor Pago:</span>
+              <span className="text-secondary font-semibold">
+                {formatMoney(permitData.amount)}
+              </span>
+            </div>
+          </div>
+
+          <div className="text-center mb-6">
+            <p className="text-sm text-gray-600 mb-2">
+              Guarde o código de consulta para verificar o status da sua
+              permissão posteriormente.
+            </p>
+            <Button
+              variant="outline"
+              className="inline-flex items-center"
+              onClick={() => {
+                const receiptData = {
+                  transactionCode: permitData.transactionCode,
+                  licensePlate: permitData.vehicleId,
+                  startTime: permitData.startTime,
+                  endTime: permitData.endTime,
+                  durationHours: permitData.durationHours,
+                  amount: permitData.amount,
+                };
+
+                const element = document.createElement("a");
+                const file = new Blob([JSON.stringify(receiptData, null, 2)], {
+                  type: "application/json",
+                });
+                element.href = URL.createObjectURL(file);
+                element.download = `comprovante-${receiptData.transactionCode}.json`;
+                document.body.appendChild(element);
+                element.click();
+                document.body.removeChild(element);
+              }}
+            >
+              <i className="material-icons mr-2 text-gray-600">download</i>
+              Baixar Comprovante
+            </Button>
+          </div>
+
+          <div className="flex justify-center">
+            <Button
+              className="bg-primary hover:bg-primary-light text-white"
+              onClick={() => navigate("/")}
+            >
+              Concluir
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (

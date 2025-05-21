@@ -30,7 +30,9 @@ export default function Header() {
             <h1 className="text-white font-bold text-xl hidden md:block">
               EstacionaFácil
             </h1>
-            <h1 className="text-white font-bold text-xl md:hidden">E-Fácil</h1>
+            <h1 className="text-white font-bold text-xl md:hidden">
+              EstacionaFácil
+            </h1>
           </Link>
         ) : (
           <Link href="/dashboard" className="flex items-center space-x-2">
@@ -38,7 +40,9 @@ export default function Header() {
             <h1 className="text-white font-bold text-xl hidden md:block">
               EstacionaFácil
             </h1>
-            <h1 className="text-white font-bold text-xl md:hidden">E-Fácil</h1>
+            <h1 className="text-white font-bold text-xl md:hidden">
+              EstacionaFácil
+            </h1>
           </Link>
         )}
 

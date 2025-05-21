@@ -36,4 +36,23 @@ export class MongoPermitRepository implements PermitRepository {
 
     return permissoes;
   }
+
+  async buscarUltimaPermissaoAtiva(licensePlate: string) {
+    const now = new Date();
+    const permit = await PermitModel.findOne({
+      vehicleId: licensePlate,
+      endTime: { $gt: now },
+      paymentStatus: PaymentStatus.COMPLETED,
+    }).sort({ endTime: -1 });
+
+    return permit;
+  }
+
+  async buscarUltimaCompra(licensePlate: string) {
+    const permit = await PermitModel.findOne({
+      vehicleId: licensePlate,
+    }).sort({ createdAt: -1 });
+
+    return permit;
+  }
 }

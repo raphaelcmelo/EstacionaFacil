@@ -40,4 +40,8 @@ export interface PermitRepository {
     userId: string,
     dataAtual: Date
   ): Promise<PermitDocument[]>;
+  buscarUltimaPermissaoAtiva(
+    licensePlate: string
+  ): Promise<PermitDocument | null>;
+  buscarUltimaCompra(licensePlate: string): Promise<PermitDocument | null>;
 }
