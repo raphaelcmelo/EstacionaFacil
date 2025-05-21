@@ -135,6 +135,9 @@ export default function UserVehicles() {
     onSuccess: () => {
       console.log("veiculo adicionado");
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/v1/estaciona-facil/veiculo/listar"],
+      });
       toast({
         title: "Veículo adicionado",
         description: "Veículo adicionado com sucesso.",
@@ -162,6 +165,9 @@ export default function UserVehicles() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/v1/estaciona-facil/veiculo/listar"],
+      });
       toast({
         title: "Veículo atualizado",
         description: "Veículo atualizado com sucesso.",
@@ -189,6 +195,9 @@ export default function UserVehicles() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["vehicles"] });
+      queryClient.invalidateQueries({
+        queryKey: ["/v1/estaciona-facil/veiculo/listar"],
+      });
       toast({
         title: "Veículo excluído",
         description: "Veículo excluído com sucesso.",
@@ -312,9 +321,7 @@ export default function UserVehicles() {
                   <Button
                     variant="default"
                     className="w-full text-base py-6 mt-2 flex items-center justify-center"
-                    onClick={() =>
-                      setLocation(`/quick-buy?veiculo=${vehicle.id}`)
-                    }
+                    onClick={() => setLocation("/quick-buy")}
                   >
                     <i className="material-icons mr-2">shopping_cart</i>
                     Comprar Permissão

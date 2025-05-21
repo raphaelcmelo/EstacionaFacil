@@ -58,42 +58,6 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-              <i className="material-icons text-primary text-2xl">
-                credit_card
-              </i>
-            </div>
-            <h3 className="font-semibold text-lg mb-2">Pagamento Rápido</h3>
-            <p className="text-gray-600">
-              Pague com cartão de crédito, débito ou PIX em poucos cliques.
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
-              <i className="material-icons text-secondary text-2xl">
-                notifications_active
-              </i>
-            </div>
-            <h3 className="font-semibold text-lg mb-2">Alertas de Expiração</h3>
-            <p className="text-gray-600">
-              Receba notificações via WhatsApp para renovar sua permissão.
-            </p>
-          </div>
-          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center">
-            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
-              <i className="material-icons text-primary text-2xl">
-                directions_car
-              </i>
-            </div>
-            <h3 className="font-semibold text-lg mb-2">Múltiplos Veículos</h3>
-            <p className="text-gray-600">
-              Cadastre e gerencie todos os seus veículos em uma única conta.
-            </p>
-          </div>
-        </div>
-
         <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8">
           <div className="p-6 md:p-8">
             <h2 className="text-xl font-bold mb-4">Como Funciona</h2>
@@ -138,26 +102,65 @@ export default function Home() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white rounded-xl shadow overflow-hidden">
-            <img
-              src="https://images.unsplash.com/photo-1556741533-6e6a62bd8b49?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
-              alt="Pagamento móvel de estacionamento"
-              className="w-full h-40 object-cover"
-            />
-            <div className="p-6">
-              <h3 className="font-semibold text-lg mb-2">
-                Usuários não cadastrados
-              </h3>
-              <p className="text-gray-600 mb-4">
-                Não é necessário criar uma conta para usar o sistema. Compre sua
-                permissão rapidamente.
-              </p>
-              <Link href="/purchase">
-                <Button>Comprar agora</Button>
-              </Link>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+              <i className="material-icons text-primary text-2xl">
+                credit_card
+              </i>
             </div>
+            <h3 className="font-semibold text-lg mb-2">Pagamento Rápido</h3>
+            <p className="text-gray-600">
+              Pague com cartão de crédito, débito ou PIX em poucos cliques.
+            </p>
           </div>
+
+          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mb-4">
+              <i className="material-icons text-secondary text-2xl">
+                directions_car
+              </i>
+            </div>
+            <h3 className="font-semibold text-lg mb-2">Múltiplos Veículos</h3>
+            <p className="text-gray-600">
+              Cadastre e gerencie todos os seus veículos em uma única conta.
+            </p>
+          </div>
+          <div className="bg-white rounded-xl shadow p-6 flex flex-col items-center text-center">
+            <div className="w-16 h-16 rounded-full bg-blue-100 flex items-center justify-center mb-4">
+              <i className="material-icons text-primary text-2xl">
+                notifications_active
+              </i>
+            </div>
+            <h3 className="font-semibold text-lg mb-2">Alertas de Expiração</h3>
+            <p className="text-gray-600">
+              Receba notificações via WhatsApp para renovar sua permissão.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {!user && (
+            <div className="bg-white rounded-xl shadow overflow-hidden">
+              <img
+                src="https://images.unsplash.com/photo-1556741533-6e6a62bd8b49?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
+                alt="Pagamento móvel de estacionamento"
+                className="w-full h-40 object-cover"
+              />
+              <div className="p-6">
+                <h3 className="font-semibold text-lg mb-2">
+                  Usuários não cadastrados
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Não é necessário criar uma conta para usar o sistema. Compre
+                  sua permissão rapidamente.
+                </p>
+                <Link href="/purchase">
+                  <Button>Comprar agora</Button>
+                </Link>
+              </div>
+            </div>
+          )}
           <div className="bg-white rounded-xl shadow overflow-hidden">
             <img
               src="https://images.unsplash.com/photo-1541899481282-d53bffe3c35d?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&h=300"
@@ -168,19 +171,20 @@ export default function Home() {
               <h3 className="font-semibold text-lg mb-2">
                 Usuários cadastrados
               </h3>
-              <p className="text-gray-600 mb-4">
-                Cadastre-se para agilizar compras futuras, receber alertas e ver
-                seu histórico.
-              </p>
+              {!user && (
+                <p className="text-gray-600 mb-4">
+                  Cadastre-se para agilizar compras futuras, receber alertas e
+                  ver seu histórico.
+                </p>
+              )}
+
               {!user ? (
                 <Link href="/register">
                   <Button variant="secondary">Criar conta</Button>
                 </Link>
               ) : (
                 <Link href="/dashboard">
-                  <Button className="bg-secondary hover:bg-secondary-light text-white">
-                    Meu painel
-                  </Button>
+                  <Button variant="secondary">Meu painel </Button>
                 </Link>
               )}
             </div>

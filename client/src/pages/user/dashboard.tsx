@@ -2,7 +2,7 @@ import { useAuth } from "@/context/auth";
 import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { formatTimeRemaining, formatDateTime, formatMoney } from "@/lib/utils";
 import { useState, useEffect } from "react";
@@ -22,6 +22,7 @@ type Vehicle = {
 
 export default function UserDashboard() {
   const { user } = useAuth();
+  const [location, setLocation] = useLocation();
 
   // Get active parking permits
   const { data: activePermits = [], isLoading: isLoadingPermits } = useQuery({
@@ -152,7 +153,7 @@ export default function UserDashboard() {
       </div>
 
       <Card className="mb-6">
-        <CardHeader className="p-4 border-b border-gray-200">
+        <CardHeader className="p-4 border-b border-gray-200 bg-blue-100">
           <CardTitle className="text-lg">Permissões Ativas</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
@@ -224,14 +225,16 @@ export default function UserDashboard() {
       </Card>
 
       <Card className="mb-6">
-        <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <CardTitle className="text-lg">Meus Veículos</CardTitle>
-          <Link href="/vehicles">
-            <Button variant="default" size="sm">
-              <i className="material-icons text-sm mr-1">add</i>
-              Adicionar
-            </Button>
-          </Link>
+        <CardHeader className="p-4 border-b border-gray-200 bg-blue-100">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">Meus Veículos</CardTitle>
+            <Link href="/vehicles">
+              <Button variant="default" size="sm">
+                <i className="material-icons text-sm mr-1">add</i>
+                Adicionar
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <CardContent className="p-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -251,25 +254,41 @@ export default function UserDashboard() {
                     <div className="flex space-x-2">
                       <Link href={`/vehicles?edit=${vehicle.id}`}>
                         <Button
-                          variant="ghost"
+                          variant="outline"
                           size="icon"
-                          className="h-6 w-6 text-gray-500 hover:text-primary"
+                          className="h-8 w-8 text-gray-500 hover:text-primary"
                         >
                           <i className="material-icons text-sm">edit</i>
                         </Button>
                       </Link>
                     </div>
                   </div>
-                  <div className="text-gray-600">{vehicle.modelo}</div>
+                  <div className="text-gray-600 mb-3">{vehicle.modelo}</div>
+                  <Button
+                    variant="outline"
+                    className="w-full text-base py-6 mt-2 flex items-center justify-center"
+                    onClick={() => setLocation("/quick-buy")}
+                  >
+                    <i className="material-icons mr-2">shopping_cart</i>
+                    Comprar Permissão
+                  </Button>
                 </div>
               ))
             ) : (
-              <div className="col-span-2 text-center py-6">
-                <p className="text-gray-600">
-                  Você não possui veículos cadastrados.
+              <div className="col-span-2 text-center py-8">
+                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                  <i className="material-icons text-gray-400 text-2xl">
+                    directions_car
+                  </i>
+                </div>
+                <h3 className="font-semibold text-lg mb-2">
+                  Nenhum veículo cadastrado
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Adicione veículos para facilitar a compra de permissões.
                 </p>
                 <Link href="/vehicles">
-                  <Button variant="default">Cadastrar Veículo</Button>
+                  <Button variant="secondary">Adicionar Veículo</Button>
                 </Link>
               </div>
             )}
@@ -278,18 +297,20 @@ export default function UserDashboard() {
       </Card>
 
       <Card>
-        <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
-          <CardTitle className="text-lg">Histórico de Permissões</CardTitle>
-          <Link href="/history">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-gray-300 text-gray-700 hover:bg-gray-100"
-            >
-              <i className="material-icons text-sm mr-1">filter_list</i>
-              Ver Tudo
-            </Button>
-          </Link>
+        <CardHeader className="p-4 border-b border-gray-200 bg-blue-100">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">Histórico de Permissões</CardTitle>
+            <Link href="/history">
+              <Button
+                variant="outline"
+                size="sm"
+                className="border-gray-300 text-gray-700 hover:bg-gray-100"
+              >
+                <i className="material-icons text-sm mr-1">filter_list</i>
+                Ver Tudo
+              </Button>
+            </Link>
+          </div>
         </CardHeader>
         <div className="overflow-x-auto">
           <table className="min-w-full">

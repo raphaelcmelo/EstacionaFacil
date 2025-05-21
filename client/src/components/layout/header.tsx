@@ -24,13 +24,23 @@ export default function Header() {
   return (
     <header className="bg-primary sticky top-0 z-50 shadow-md">
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
-        <Link href="/" className="flex items-center space-x-2">
-          <i className="material-icons text-white">local_parking</i>
-          <h1 className="text-white font-bold text-xl hidden md:block">
-            EstacionaFácil
-          </h1>
-          <h1 className="text-white font-bold text-xl md:hidden">E-Fácil</h1>
-        </Link>
+        {!user ? (
+          <Link href="/" className="flex items-center space-x-2">
+            <i className="material-icons text-white">local_parking</i>
+            <h1 className="text-white font-bold text-xl hidden md:block">
+              EstacionaFácil
+            </h1>
+            <h1 className="text-white font-bold text-xl md:hidden">E-Fácil</h1>
+          </Link>
+        ) : (
+          <Link href="/dashboard" className="flex items-center space-x-2">
+            <i className="material-icons text-white">local_parking</i>
+            <h1 className="text-white font-bold text-xl hidden md:block">
+              EstacionaFácil
+            </h1>
+            <h1 className="text-white font-bold text-xl md:hidden">E-Fácil</h1>
+          </Link>
+        )}
 
         <div className="flex items-center">
           {!user ? (

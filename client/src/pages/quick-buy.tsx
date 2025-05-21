@@ -124,9 +124,11 @@ export default function QuickBuy() {
   // Get user vehicles if logged in
   const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
-  const { data: userVehicles, isLoading: isLoadingVehicles } = useQuery<
-    Vehicle[]
-  >({
+  const {
+    data: userVehicles,
+    isLoading: isLoadingVehicles,
+    refetch: refetchVehicles,
+  } = useQuery<Vehicle[]>({
     queryKey: ["/v1/estaciona-facil/veiculo/listar"],
     enabled: !!user,
   });
@@ -149,6 +151,11 @@ export default function QuickBuy() {
   const isVehicleSelectionDisabled =
     licensePlateValue.length > 0 || modelValue.length > 0;
 
+  // Função para capitalizar texto
+  const capitalizeText = (text: string) => {
+    return text.toUpperCase();
+  };
+
   // Handle vehicle selection
   const handleVehicleSelection = (value: string) => {
     setSelectedVehicle(value);
@@ -160,6 +167,8 @@ export default function QuickBuy() {
       if (vehicle) {
         quickBuyForm.setValue("licensePlate", vehicle.placa);
         quickBuyForm.setValue("model", vehicle.modelo);
+        // Avança automaticamente para a etapa 2 quando um veículo é selecionado
+        setCurrentStep(2);
       }
     }
   };
@@ -198,22 +207,41 @@ export default function QuickBuy() {
 
   // Atualiza o useEffect para setar o vehicleFromParams
   useEffect(() => {
+    if (!userVehicles) return;
+
     const params = new URLSearchParams(location.split("?")[1]);
     const idParam = params.get("veiculo");
-    if (idParam && userVehicles && userVehicles.length > 0) {
-      const veiculoEncontrado = userVehicles.find(
-        (v) => v.id.toString() === idParam
-      );
+
+    if (idParam) {
+      const veiculoEncontrado = userVehicles.find((v) => v.id === idParam);
       if (veiculoEncontrado) {
+        setSelectedVehicle(idParam);
         setVehicleFromParams(veiculoEncontrado);
-        setSelectedVehicle(veiculoEncontrado.id.toString());
         quickBuyForm.setValue("licensePlate", veiculoEncontrado.placa);
         quickBuyForm.setValue("model", veiculoEncontrado.modelo);
+      } else {
+        // Caso o ID do veículo não seja encontrado, redireciona para a página inicial ou define como "new"
+        setSelectedVehicle("new");
+        setVehicleFromParams(null);
+        quickBuyForm.setValue("licensePlate", "");
+        quickBuyForm.setValue("model", "");
       }
     } else {
-      setVehicleFromParams(null);
+      // Se não houver parâmetro e houver veículos, não seleciona nenhum por padrão
+      if (userVehicles.length > 0) {
+        setSelectedVehicle(null);
+        setVehicleFromParams(null);
+        quickBuyForm.setValue("licensePlate", "");
+        quickBuyForm.setValue("model", "");
+      } else {
+        // Se não houver veículos, seleciona "new"
+        setSelectedVehicle("new");
+        setVehicleFromParams(null);
+        quickBuyForm.setValue("licensePlate", "");
+        quickBuyForm.setValue("model", "");
+      }
     }
-  }, [location, userVehicles]);
+  }, [userVehicles, location, quickBuyForm]);
 
   // Purchase permit mutation
   const purchasePermitMutation = useMutation({
@@ -311,28 +339,77 @@ export default function QuickBuy() {
                 {user ? (
                   <div className="mb-6">
                     <Label className="mb-2 block">Selecione um veículo</Label>
-                    <Select
-                      value={selectedVehicle || ""}
-                      onValueChange={handleVehicleSelection}
-                      disabled={!!vehicleFromParams}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione um veículo ou cadastre novo" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="new">
-                          Adicionar novo veículo
-                        </SelectItem>
-                        {userVehicles?.map((vehicle) => (
-                          <SelectItem
-                            key={vehicle.id}
-                            value={vehicle.id.toString()}
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {userVehicles && userVehicles.length > 0 ? (
+                        <>
+                          {userVehicles.map((vehicle) => (
+                            <div
+                              key={vehicle.id}
+                              className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                                selectedVehicle === vehicle.id.toString()
+                                  ? "border-primary bg-primary/5"
+                                  : "border-gray-300 hover:border-primary"
+                              }`}
+                              onClick={() =>
+                                handleVehicleSelection(vehicle.id.toString())
+                              }
+                            >
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-semibold">
+                                    {vehicle.placa}
+                                  </p>
+                                  <p className="text-sm text-gray-600">
+                                    {vehicle.modelo}
+                                  </p>
+                                </div>
+                                {selectedVehicle === vehicle.id.toString() && (
+                                  <i className="material-icons text-primary">
+                                    check_circle
+                                  </i>
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                          <div
+                            className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                              selectedVehicle === "new"
+                                ? "border-primary bg-primary/5"
+                                : "border-gray-300 hover:border-primary"
+                            }`}
+                            onClick={() => handleVehicleSelection("new")}
                           >
-                            {vehicle.placa} - {vehicle.modelo}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold">Novo veículo</p>
+                                <p className="text-sm text-gray-600">
+                                  Adicionar um novo veículo
+                                </p>
+                              </div>
+                              {selectedVehicle === "new" && (
+                                <i className="material-icons text-primary">
+                                  check_circle
+                                </i>
+                              )}
+                            </div>
+                          </div>
+                        </>
+                      ) : (
+                        <div
+                          className="border rounded-lg p-4 cursor-pointer transition-all border-gray-300 hover:border-primary"
+                          onClick={() => handleVehicleSelection("new")}
+                        >
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-semibold">Novo veículo</p>
+                              <p className="text-sm text-gray-600">
+                                Adicionar um novo veículo
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <FormField
                         control={quickBuyForm.control}
@@ -342,13 +419,12 @@ export default function QuickBuy() {
                             <FormLabel>Placa do Veículo</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="ABC1234"
+                                placeholder="ABC1234 ou ABC1D23"
                                 value={field.value}
                                 onChange={field.onChange}
                                 disabled={
-                                  !!vehicleFromParams ||
-                                  (selectedVehicle !== null &&
-                                    selectedVehicle !== "new")
+                                  selectedVehicle !== null &&
+                                  selectedVehicle !== "new"
                                 }
                               />
                             </FormControl>
@@ -367,13 +443,17 @@ export default function QuickBuy() {
                             <FormLabel>Modelo do Veículo</FormLabel>
                             <FormControl>
                               <Input
-                                placeholder="Ex: Fiat Palio"
+                                placeholder="Ex: POLO"
                                 value={field.value}
-                                onChange={field.onChange}
+                                onChange={(e) => {
+                                  const capitalizedValue = capitalizeText(
+                                    e.target.value
+                                  );
+                                  field.onChange(capitalizedValue);
+                                }}
                                 disabled={
-                                  !!vehicleFromParams ||
-                                  (selectedVehicle !== null &&
-                                    selectedVehicle !== "new")
+                                  selectedVehicle !== null &&
+                                  selectedVehicle !== "new"
                                 }
                               />
                             </FormControl>
@@ -618,7 +698,13 @@ export default function QuickBuy() {
                             }
                             className="space-y-2"
                           >
-                            <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
+                            <div
+                              className={`flex items-center bg-white border rounded-lg p-3 cursor-pointer transition-colors ${
+                                field.value === PaymentMethod.CREDIT_CARD
+                                  ? "border-primary"
+                                  : "border-gray-300 hover:border-secondary"
+                              }`}
+                            >
                               <RadioGroupItem
                                 value={PaymentMethod.CREDIT_CARD}
                                 id="credit-card"
@@ -636,7 +722,13 @@ export default function QuickBuy() {
                                 <span className="inline-block w-8 h-5 bg-red-600 rounded"></span>
                               </div>
                             </div>
-                            <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
+                            <div
+                              className={`flex items-center bg-white border rounded-lg p-3 cursor-pointer transition-colors ${
+                                field.value === PaymentMethod.PIX
+                                  ? "border-primary"
+                                  : "border-gray-300 hover:border-secondary"
+                              }`}
+                            >
                               <RadioGroupItem
                                 value={PaymentMethod.PIX}
                                 id="pix"
@@ -652,7 +744,13 @@ export default function QuickBuy() {
                                 PIX
                               </span>
                             </div>
-                            <div className="flex items-center bg-white border border-gray-300 rounded-lg p-3 cursor-pointer hover:border-primary transition-colors">
+                            <div
+                              className={`flex items-center bg-white border rounded-lg p-3 cursor-pointer transition-colors ${
+                                field.value === PaymentMethod.TESTE
+                                  ? "border-primary"
+                                  : "border-gray-300 hover:border-secondary"
+                              }`}
+                            >
                               <RadioGroupItem
                                 value={PaymentMethod.TESTE}
                                 id="teste"
