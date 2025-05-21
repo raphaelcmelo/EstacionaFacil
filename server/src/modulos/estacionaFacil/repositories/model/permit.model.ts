@@ -75,4 +75,4 @@ permitSchema.pre("save", async function (done) {
   done();
 });
 
-export const PermitModel = mongoose.model("Permit", permitSchema);
+export const PermitModel = mongoose.model("Permissoe", permitSchema);

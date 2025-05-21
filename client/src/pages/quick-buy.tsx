@@ -8,7 +8,6 @@ import { DurationOption } from "@/components/ui/duration-option";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
-import { FaPix } from "react-icons/fa6";
 import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/hooks/use-toast";
 import { Helmet } from "react-helmet";
@@ -16,13 +15,7 @@ import { formatMoney, formatDateTime } from "@/lib/utils";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { PaymentMethod } from "@shared/schema";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+
 import { LoadingSpinner } from "@/components/ui/spinner";
 import {
   Form,
@@ -298,6 +291,34 @@ export default function QuickBuy() {
     return formatDateTime(endTime);
   };
 
+  const handleDownloadReceipt = () => {
+    const receiptElement = document.getElementById("receipt-content");
+    if (!receiptElement) return;
+
+    const receiptData = {
+      transactionCode: permitData.transactionCode,
+      licensePlate: permitData.vehicleId,
+      model: quickBuyForm.getValues("model"),
+      startTime: permitData.startTime,
+      endTime: permitData.endTime,
+      zone: "Centro", // Valor padrão já que não temos essa informação
+      amount: permitData.amount,
+      durationHours: permitData.durationHours,
+    };
+
+    const blob = new Blob([JSON.stringify(receiptData, null, 2)], {
+      type: "application/json",
+    });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `comprovante-${permitData.transactionCode}.json`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  };
+
   if (isLoadingPrices || (user && isLoadingVehicles)) {
     return <LoadingSpinner />;
   }
@@ -320,7 +341,7 @@ export default function QuickBuy() {
             </p>
           </div>
 
-          <div className="bg-gray-50 p-4 rounded-lg mb-6">
+          <div id="receipt-content" className="bg-gray-50 p-4 rounded-lg mb-6">
             <div className="flex justify-between mb-2">
               <span className="text-gray-600">Código de Consulta:</span>
               <span className="font-semibold">
@@ -361,26 +382,7 @@ export default function QuickBuy() {
             <Button
               variant="outline"
               className="inline-flex items-center"
-              onClick={() => {
-                const receiptData = {
-                  transactionCode: permitData.transactionCode,
-                  licensePlate: permitData.vehicleId,
-                  startTime: permitData.startTime,
-                  endTime: permitData.endTime,
-                  durationHours: permitData.durationHours,
-                  amount: permitData.amount,
-                };
-
-                const element = document.createElement("a");
-                const file = new Blob([JSON.stringify(receiptData, null, 2)], {
-                  type: "application/json",
-                });
-                element.href = URL.createObjectURL(file);
-                element.download = `comprovante-${receiptData.transactionCode}.json`;
-                document.body.appendChild(element);
-                element.click();
-                document.body.removeChild(element);
-              }}
+              onClick={handleDownloadReceipt}
             >
               <i className="material-icons mr-2 text-gray-600">download</i>
               Baixar Comprovante

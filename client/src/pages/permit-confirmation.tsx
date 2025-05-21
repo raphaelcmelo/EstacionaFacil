@@ -12,6 +12,7 @@ export default function PermitConfirmation() {
   const [location] = useLocation();
   const [permitId, setPermitId] = useState<string | null>(null);
   const [confirmationData, setConfirmationData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   // Extract permit ID from query parameters
   useEffect(() => {
@@ -22,36 +23,38 @@ export default function PermitConfirmation() {
     }
   }, [location]);
 
-  // Mock function to download receipt
+  // Função para baixar comprovante
   const handleDownloadReceipt = () => {
+    if (!confirmationData) return;
+
     const receiptData = {
-      transactionCode: confirmationData?.transactionCode || "EF2023091501",
-      licensePlate: confirmationData?.vehicle?.licensePlate || "ABC1234",
-      model: confirmationData?.vehicle?.model || "Fiat Palio",
-      startTime: confirmationData?.startTime,
-      endTime: confirmationData?.endTime,
-      zone: confirmationData?.zone?.name || "Centro",
-      amount: confirmationData?.amount,
-      durationHours: confirmationData?.durationHours,
+      transactionCode: confirmationData.transactionCode,
+      licensePlate: confirmationData.vehicle.licensePlate,
+      model: confirmationData.vehicle.model,
+      startTime: confirmationData.startTime,
+      endTime: confirmationData.endTime,
+      zone: confirmationData.zone.name,
+      amount: confirmationData.amount,
+      durationHours: confirmationData.durationHours,
     };
 
-    const element = document.createElement("a");
-    const file = new Blob([JSON.stringify(receiptData, null, 2)], {
+    const blob = new Blob([JSON.stringify(receiptData, null, 2)], {
       type: "application/json",
     });
-    element.href = URL.createObjectURL(file);
-    element.download = `comprovante-${receiptData.transactionCode}.json`;
-    document.body.appendChild(element);
-    element.click();
-    document.body.removeChild(element);
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `comprovante-${confirmationData.transactionCode}.json`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   };
 
   useEffect(() => {
-    // This is a workaround since we're not implementing the actual API endpoint
-    // In a real scenario, we would fetch the permit data from the API
-
     const fetchData = async () => {
       try {
+        setIsLoading(true);
         // This would be the proper approach if we had a direct endpoint:
         // const response = await apiRequest("GET", `/v1/estaciona-facil/permits/${permitId}`);
         // const data = await response.json();
@@ -84,6 +87,8 @@ export default function PermitConfirmation() {
         }
       } catch (error) {
         console.error("Error fetching permit data:", error);
+      } finally {
+        setIsLoading(false);
       }
     };
 
@@ -92,8 +97,31 @@ export default function PermitConfirmation() {
     }
   }, [permitId]);
 
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <LoadingSpinner />
+        <span className="ml-2 text-gray-600">
+          Carregando dados da permissão...
+        </span>
+      </div>
+    );
+  }
+
   if (!confirmationData) {
-    return <LoadingSpinner />;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <i className="material-icons text-4xl text-gray-400 mb-2">
+            error_outline
+          </i>
+          <p className="text-gray-600">Nenhum dado de permissão encontrado.</p>
+          <Link href="/">
+            <Button className="mt-4">Voltar ao Início</Button>
+          </Link>
+        </div>
+      </div>
+    );
   }
 
   return (
