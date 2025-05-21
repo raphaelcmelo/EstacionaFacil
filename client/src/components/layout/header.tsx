@@ -26,7 +26,7 @@ export default function Header() {
       <div className="container mx-auto px-4 py-3 flex justify-between items-center">
         {!user ? (
           <Link href="/" className="flex items-center space-x-2">
-            <i className="material-icons text-white">local_parking</i>
+            <i className="material-icons text-white">garage</i>
             <h1 className="text-white font-bold text-xl hidden md:block">
               EstacionaFácil
             </h1>
@@ -34,7 +34,7 @@ export default function Header() {
           </Link>
         ) : (
           <Link href="/dashboard" className="flex items-center space-x-2">
-            <i className="material-icons text-white">local_parking</i>
+            <i className="material-icons text-white">garage</i>
             <h1 className="text-white font-bold text-xl hidden md:block">
               EstacionaFácil
             </h1>
