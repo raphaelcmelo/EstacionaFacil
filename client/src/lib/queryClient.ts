@@ -1,7 +1,17 @@
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+// Função para redirecionar para a página de login
+const redirectToLogin = () => {
+  localStorage.removeItem("accessToken");
+  window.dispatchEvent(new CustomEvent("unauthorized"));
+};
+
 async function throwIfResNotOk(res: Response) {
   if (!res.ok) {
+    // Se for erro de autenticação (401), redireciona para login
+    if (res.status === 401) {
+      redirectToLogin();
+    }
     const text = (await res.text()) || res.statusText;
     throw new Error(`${res.status}: ${text}`);
   }
@@ -53,8 +63,11 @@ export const getQueryFn: <T>(options: {
       headers,
     });
 
-    if (unauthorizedBehavior === "returnNull" && res.status === 401) {
-      return null;
+    if (res.status === 401) {
+      if (unauthorizedBehavior === "returnNull") {
+        return null;
+      }
+      redirectToLogin();
     }
 
     await throwIfResNotOk(res);

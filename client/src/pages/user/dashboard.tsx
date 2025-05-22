@@ -20,12 +20,26 @@ type Vehicle = {
   updatedAt: string;
 };
 
+type Permit = {
+  id: number;
+  vehicle: {
+    licensePlate: string;
+    model: string;
+  };
+  endTime: string;
+  startTime: string;
+  durationHours: number;
+  amount: number;
+};
+
 export default function UserDashboard() {
   const { user } = useAuth();
   const [location, setLocation] = useLocation();
 
   // Get active parking permits
-  const { data: activePermits = [], isLoading: isLoadingPermits } = useQuery({
+  const { data: activePermits = [], isLoading: isLoadingPermits } = useQuery<
+    Permit[]
+  >({
     queryKey: ["/api/permits/active"],
     enabled: !!user,
   });
@@ -46,7 +60,9 @@ export default function UserDashboard() {
   });
 
   // Get permit history for the stats
-  const { data: permitHistory = [], isLoading: isLoadingHistory } = useQuery({
+  const { data: permitHistory = [], isLoading: isLoadingHistory } = useQuery<
+    Permit[]
+  >({
     queryKey: ["/api/permits/history", { limit: 10, offset: 0 }],
     enabled: !!user,
   });
@@ -58,12 +74,12 @@ export default function UserDashboard() {
 
   // Update time remaining every second
   useEffect(() => {
-    if (!activePermits) return;
+    if (!activePermits || activePermits.length === 0) return;
 
     const updateTimeRemaining = () => {
       const newTimeRemaining: { [key: number]: string } = {};
 
-      activePermits.forEach((permit: any) => {
+      activePermits.forEach((permit) => {
         newTimeRemaining[permit.id] = formatTimeRemaining(permit.endTime);
       });
 
@@ -74,7 +90,7 @@ export default function UserDashboard() {
     const intervalId = setInterval(updateTimeRemaining, 1000);
 
     return () => clearInterval(intervalId);
-  }, [activePermits]);
+  }, [activePermits?.length]);
 
   // Calculate stats
   const purchasesThisMonth = permitHistory?.length || 0;
@@ -158,7 +174,7 @@ export default function UserDashboard() {
         </CardHeader>
         <CardContent className="p-4">
           {activePermits?.length > 0 ? (
-            activePermits.map((permit: any) => (
+            activePermits.map((permit) => (
               <div key={permit.id} className="bg-gray-50 rounded-lg p-4 mb-4">
                 <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4">
                   <div className="mb-2 md:mb-0">
@@ -323,9 +339,6 @@ export default function UserDashboard() {
                   Duração
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Zona
-                </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Valor
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -335,7 +348,7 @@ export default function UserDashboard() {
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {permitHistory?.length > 0 ? (
-                permitHistory.map((history: any) => (
+                permitHistory.map((history) => (
                   <tr key={history.id}>
                     <td className="px-4 py-3 whitespace-nowrap">
                       <div className="flex items-center">
@@ -354,9 +367,6 @@ export default function UserDashboard() {
                       {history.durationHours}{" "}
                       {history.durationHours === 1 ? "hora" : "horas"}
                     </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      {history.zone.name}
-                    </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm font-medium text-gray-900">
                       {formatMoney(history.amount)}
                     </td>
@@ -374,7 +384,7 @@ export default function UserDashboard() {
               ) : (
                 <tr>
                   <td
-                    colSpan={6}
+                    colSpan={5}
                     className="px-4 py-6 text-center text-gray-500"
                   >
                     Nenhuma permissão encontrada no histórico.

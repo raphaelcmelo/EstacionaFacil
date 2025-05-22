@@ -31,6 +31,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 
+const baseUrl = import.meta.env.VITE_API_BASE_URL;
+
 // Form schema for verification
 const verifySchema = z.object({
   licensePlate: z
@@ -57,7 +59,7 @@ const infringementSchema = z.object({
 type VerifyFormData = z.infer<typeof verifySchema>;
 type InfringementFormData = z.infer<typeof infringementSchema>;
 
-export default function FiscalVerify() {
+function FiscalVerify() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [location, navigate] = useLocation();
@@ -119,10 +121,12 @@ export default function FiscalVerify() {
 
   // Update time remaining every second
   useEffect(() => {
-    if (!verificationResult || verificationResult.status !== "VALID") return;
+    if (!verificationResult || !verificationResult.permissao) return;
 
     const updateTimeRemaining = () => {
-      setTimeRemaining(formatTimeRemaining(verificationResult.permit.endTime));
+      setTimeRemaining(
+        formatTimeRemaining(verificationResult.permissao.endDate)
+      );
     };
 
     updateTimeRemaining();
@@ -134,15 +138,25 @@ export default function FiscalVerify() {
   // Mutations
   const verifyMutation = useMutation({
     mutationFn: async (data: VerifyFormData) => {
-      const response = await apiRequest("POST", "/api/fiscal/verify", data);
-      return await response.json();
+      const response = await apiRequest(
+        "POST",
+        `${baseUrl}/v1/estaciona-facil/permissao/check`,
+        {
+          placa: data.licensePlate,
+          checkTime: new Date().toISOString(),
+        }
+      );
+      return response;
     },
     onSuccess: (data) => {
       setVerificationResult(data);
       setShowVerificationResult(true);
 
-      // If no permit found, prepare infringement form
-      if (data.status === "NOT_FOUND") {
+      // Se não encontrou permissão, prepara o formulário de infração
+      if (
+        data.message === "Nenhuma permissão encontrada para este veículo" ||
+        data.message === "Nenhuma permissão ativa no momento"
+      ) {
         infringementForm.setValue(
           "licensePlate",
           verifyForm.getValues("licensePlate")
@@ -317,7 +331,7 @@ export default function FiscalVerify() {
           {/* Verification result */}
           {showVerificationResult &&
             verificationResult &&
-            verificationResult.status === "VALID" && (
+            verificationResult.permissao && (
               <div className="border-t border-gray-200 pt-6">
                 <div className="bg-green-100 p-4 rounded-lg mb-4">
                   <div className="flex items-center">
@@ -338,25 +352,25 @@ export default function FiscalVerify() {
                     <div>
                       <div className="text-sm text-gray-600">Placa:</div>
                       <div className="font-semibold">
-                        {verificationResult.permit.vehicle.licensePlate}
+                        {verificationResult.permissao.placa}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">Modelo:</div>
                       <div className="font-semibold">
-                        {verificationResult.permit.vehicle.model}
+                        {verificationResult.permissao.modelo}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">Início:</div>
                       <div className="font-semibold">
-                        {formatDateTime(verificationResult.permit.startTime)}
+                        {formatDateTime(verificationResult.permissao.startDate)}
                       </div>
                     </div>
                     <div>
                       <div className="text-sm text-gray-600">Término:</div>
                       <div className="font-semibold">
-                        {formatDateTime(verificationResult.permit.endTime)}
+                        {formatDateTime(verificationResult.permissao.endDate)}
                       </div>
                     </div>
                     <div>
@@ -492,3 +506,5 @@ export default function FiscalVerify() {
     </>
   );
 }
+
+export { FiscalVerify as default };

@@ -18,14 +18,16 @@ import UserDashboard from "@/pages/user/dashboard";
 import UserVehicles from "@/pages/user/vehicles";
 import UserHistory from "@/pages/user/history";
 import FiscalDashboard from "@/pages/fiscal/dashboard";
-import FiscalVerify from "@/pages/fiscal/verify";
-import AdminDashboard from "@/pages/admin/dashboard";
-import AdminUsers from "@/pages/admin/users";
-import AdminPrices from "@/pages/admin/prices";
-import { useAuth } from "@/context/auth";
 import { Suspense, lazy } from "react";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { PermissoesAtivas } from "./pages/PermissoesAtivas";
+import { useAuth } from "./context/auth";
+import AdminDashboard from "./pages/admin/dashboard";
+import AdminPrices from "./pages/admin/prices";
+import AdminUsers from "./pages/admin/users";
+import { AuthInterceptor } from "@/components/AuthInterceptor";
+
+const FiscalVerify = lazy(() => import("@/pages/fiscal/verify"));
 
 function ProtectedRoute({
   component: Component,
@@ -149,6 +151,7 @@ function Router() {
 function App() {
   return (
     <>
+      <AuthInterceptor />
       <div className="min-h-screen flex flex-col">
         <Header />
         <main className="flex-grow container mx-auto px-4 py-6 md:py-8">

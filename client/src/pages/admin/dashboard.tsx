@@ -89,9 +89,10 @@ export default function AdminDashboard() {
     return <LoadingSpinner />;
   }
 
-  const getStatusBadge = (status: PaymentStatus) => {
+  const getStatusBadge = (status: PaymentStatus, dataFim: string) => {
     const now = new Date();
-    const isExpired = status === PaymentStatus.COMPLETED && now > new Date();
+    const dataExpiracao = new Date(dataFim);
+    const isExpired = status === PaymentStatus.COMPLETED && now > dataExpiracao;
 
     if (status === PaymentStatus.PENDING) {
       return (
@@ -113,7 +114,7 @@ export default function AdminDashboard() {
       );
     } else {
       return (
-        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
           Expirada
         </span>
       );
@@ -294,7 +295,7 @@ export default function AdminDashboard() {
                         {formatDateTime(permissao.dataFim)}
                       </td>
                       <td className="px-4 py-3 whitespace-nowrap">
-                        {getStatusBadge(permissao.status)}
+                        {getStatusBadge(permissao.status, permissao.dataFim)}
                       </td>
                     </tr>
                   ))}

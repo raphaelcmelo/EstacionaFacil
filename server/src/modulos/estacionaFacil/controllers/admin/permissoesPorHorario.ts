@@ -1,14 +1,20 @@
 import { Request, Response } from "express";
 import { MongoPermitRepository } from "../../repositories/mongodb/mongo.permit.repository";
 import { PaymentStatus } from "@shared/schema";
+import { createBrasiliaDate, toBrasiliaTime } from "@/utils/date";
+
+interface Horario {
+  hora: string;
+  quantidade: number;
+}
 
 export const getPermissoesPorHorario = async (req: Request, res: Response) => {
   try {
     const permitRepository = new MongoPermitRepository();
 
-    // Obtém a data de hoje
-    const hoje = new Date();
-    const inicioDoDia = new Date(
+    // Obtém a data de hoje em GMT-3
+    const hoje = toBrasiliaTime(new Date());
+    const inicioDoDia = createBrasiliaDate(
       hoje.getFullYear(),
       hoje.getMonth(),
       hoje.getDate(),
@@ -16,7 +22,7 @@ export const getPermissoesPorHorario = async (req: Request, res: Response) => {
       0,
       0
     );
-    const fimDoDia = new Date(
+    const fimDoDia = createBrasiliaDate(
       hoje.getFullYear(),
       hoje.getMonth(),
       hoje.getDate(),
@@ -32,7 +38,7 @@ export const getPermissoesPorHorario = async (req: Request, res: Response) => {
     );
 
     // Inicializa o array de horários
-    const horarios = [];
+    const horarios: Horario[] = [];
     for (let hora = 8; hora <= 18; hora++) {
       for (let minuto = 0; minuto < 60; minuto += 30) {
         horarios.push({
@@ -47,7 +53,7 @@ export const getPermissoesPorHorario = async (req: Request, res: Response) => {
     // Conta as permissões por horário
     permissoesDoDia.forEach((permissao) => {
       if (permissao.paymentStatus === PaymentStatus.COMPLETED) {
-        const dataInicio = new Date(permissao.startTime);
+        const dataInicio = toBrasiliaTime(permissao.startTime);
         const horaInicio = dataInicio.getHours();
         const minutoInicio = Math.floor(dataInicio.getMinutes() / 30) * 30;
 

@@ -51,6 +51,11 @@ const permitSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    zone: {
+      type: String,
+      required: true,
+      enum: ["Zona Azul", "Zona Verde", "Zona Amarela", "Zona Vermelha"],
+    },
     createdAt: {
       type: Date,
       default: Date.now,
