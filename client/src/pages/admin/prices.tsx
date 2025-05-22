@@ -355,7 +355,7 @@ export default function AdminPrices() {
 
       <div className="grid grid-cols-1 gap-6">
         <Card>
-          <CardHeader className="p-4 border-b border-gray-200">
+          <CardHeader className="p-4 border-b bg-blue-100 border-gray-200">
             <CardTitle className="text-lg">Configuração de Preços</CardTitle>
           </CardHeader>
           <CardContent className="p-4">

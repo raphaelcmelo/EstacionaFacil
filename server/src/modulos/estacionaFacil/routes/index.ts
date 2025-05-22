@@ -2,6 +2,7 @@ import { Router } from "express";
 import veiculoRoutes from "./veiculo.route";
 import precoRoutes from "./preco.route";
 import permitsRoutes from "./permits.route";
+import adminRoutes from "./admin.route";
 
 const estacionaFacilRoutes = Router();
 
@@ -17,6 +18,10 @@ const defaultRoutes = [
   {
     path: "/permits",
     route: permitsRoutes,
+  },
+  {
+    path: "/admin",
+    route: adminRoutes,
   },
 ];
 

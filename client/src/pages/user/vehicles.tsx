@@ -58,7 +58,10 @@ const vehicleSchema = z.object({
       message:
         "Placa deve ter exatamente 7 caracteres (ex: ABC1234 ou ABC1D23).",
     }),
-  modelo: z.string().min(2, "Modelo deve ter pelo menos 2 caracteres"),
+  modelo: z
+    .string()
+    .min(2, "Modelo deve ter pelo menos 2 caracteres")
+    .transform((val) => val.toUpperCase()),
 });
 
 type VehicleFormData = z.infer<typeof vehicleSchema>;
@@ -396,7 +399,13 @@ export default function UserVehicles() {
                   <FormItem>
                     <FormLabel>Modelo do Veículo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Fiat Palio" {...field} />
+                      <Input
+                        placeholder="Ex: Fiat Palio"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.toUpperCase())
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -473,7 +482,13 @@ export default function UserVehicles() {
                   <FormItem>
                     <FormLabel>Modelo do Veículo</FormLabel>
                     <FormControl>
-                      <Input placeholder="Ex: Fiat Palio" {...field} />
+                      <Input
+                        placeholder="Ex: Fiat Palio"
+                        {...field}
+                        onChange={(e) =>
+                          field.onChange(e.target.value.toUpperCase())
+                        }
+                      />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

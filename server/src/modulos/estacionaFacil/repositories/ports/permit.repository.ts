@@ -44,4 +44,9 @@ export interface PermitRepository {
     licensePlate: string
   ): Promise<PermitDocument | null>;
   buscarUltimaCompra(licensePlate: string): Promise<PermitDocument | null>;
+  buscarPermissoesPorPeriodo(
+    dataInicio: Date,
+    dataFim: Date
+  ): Promise<PermitDocument[]>;
+  buscarTodasPermissoes(): Promise<PermitDocument[]>;
 }

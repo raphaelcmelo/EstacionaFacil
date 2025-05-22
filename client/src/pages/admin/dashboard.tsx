@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "wouter";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { Helmet } from "react-helmet";
-import { formatMoney } from "@/lib/utils";
+import { formatMoney, formatDateTime } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -14,20 +14,89 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import { apiRequest } from "@/lib/queryClient";
+import { PaymentStatus, PaymentMethod } from "@shared/schema";
+
+interface Permissao {
+  id: string;
+  placa: string;
+  dataInicio: string;
+  dataFim: string;
+  valor: number;
+  status: PaymentStatus;
+  metodoPagamento?: PaymentMethod;
+  codigoTransacao?: string;
+  duracaoHoras: number;
+  criadoEm: string;
+  atualizadoEm: string;
+}
 
 export default function AdminDashboard() {
   const { user } = useAuth();
   const [timeRange, setTimeRange] = useState("week");
 
   // Get admin statistics
-  const { data: adminStats, isLoading } = useQuery({
-    queryKey: ["/api/admin/stats"],
+  const { data: adminStats, isLoading: isLoadingStats } = useQuery({
+    queryKey: ["/v1/estaciona-facil/admin/dashboard"],
+    queryFn: async () => {
+      const response = await apiRequest(
+        "GET",
+        "/v1/estaciona-facil/admin/dashboard"
+      );
+      return response;
+    },
     enabled: !!user && (user.role === "MANAGER" || user.role === "ADMIN"),
   });
 
-  if (isLoading) {
+  // Get latest permits
+  const { data: latestPermits, isLoading: isLoadingPermits } = useQuery<
+    Permissao[]
+  >({
+    queryKey: ["/v1/estaciona-facil/admin/permissoes"],
+    queryFn: async () => {
+      const response = await apiRequest(
+        "GET",
+        "/v1/estaciona-facil/admin/permissoes"
+      );
+      return response;
+    },
+    enabled: !!user && (user.role === "MANAGER" || user.role === "ADMIN"),
+  });
+
+  if (isLoadingStats || isLoadingPermits) {
     return <LoadingSpinner />;
   }
+
+  const getStatusBadge = (status: PaymentStatus) => {
+    const now = new Date();
+    const isExpired = status === PaymentStatus.COMPLETED && now > new Date();
+
+    if (status === PaymentStatus.PENDING) {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+          Pendente
+        </span>
+      );
+    } else if (status === PaymentStatus.COMPLETED && !isExpired) {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+          Ativa
+        </span>
+      );
+    } else if (status === PaymentStatus.FAILED) {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-red-100 text-red-800">
+          Falhou
+        </span>
+      );
+    } else {
+      return (
+        <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+          Expirada
+        </span>
+      );
+    }
+  };
 
   return (
     <>
@@ -53,17 +122,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <p className="text-2xl font-semibold">
-                {adminStats?.permitStats?.todayCount || 0}
-              </p>
-              <p className="text-xs text-green-600 flex items-center">
-                <i className="material-icons text-xs mr-1">arrow_upward</i>
-                {Math.round(
-                  ((adminStats?.permitStats?.todayCount || 0) /
-                    (adminStats?.permitStats?.yesterdayCount || 1) -
-                    1) *
-                    100
-                )}
-                % em relação a ontem
+                {adminStats?.permissoesHoje || 0}
               </p>
             </CardContent>
           </Card>
@@ -76,17 +135,7 @@ export default function AdminDashboard() {
                 </div>
               </div>
               <p className="text-2xl font-semibold">
-                {formatMoney(adminStats?.permitStats?.todayRevenue || 0)}
-              </p>
-              <p className="text-xs text-green-600 flex items-center">
-                <i className="material-icons text-xs mr-1">arrow_upward</i>
-                {Math.round(
-                  ((adminStats?.permitStats?.todayRevenue || 0) /
-                    (adminStats?.permitStats?.yesterdayRevenue || 1) -
-                    1) *
-                    100
-                )}
-                % em relação a ontem
+                {formatMoney(adminStats?.receitaTotalHoje || 0)}
               </p>
             </CardContent>
           </Card>
@@ -98,10 +147,8 @@ export default function AdminDashboard() {
                   <i className="material-icons text-red-600">report_problem</i>
                 </div>
               </div>
-              <p className="text-2xl font-semibold">23</p>
-              <p className="text-xs text-red-600 flex items-center">
-                <i className="material-icons text-xs mr-1">arrow_downward</i>
-                5% em relação a ontem
+              <p className="text-2xl font-semibold">
+                {adminStats?.infracoesHoje || 0}
               </p>
             </CardContent>
           </Card>
@@ -113,10 +160,8 @@ export default function AdminDashboard() {
                   <i className="material-icons text-purple-600">people</i>
                 </div>
               </div>
-              <p className="text-2xl font-semibold">1.287</p>
-              <p className="text-xs text-green-600 flex items-center">
-                <i className="material-icons text-xs mr-1">arrow_upward</i>
-                3% esta semana
+              <p className="text-2xl font-semibold">
+                {adminStats?.totalUsuariosCidadao || 0}
               </p>
             </CardContent>
           </Card>
@@ -178,112 +223,38 @@ export default function AdminDashboard() {
                       Valor
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Válido até
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Status
                     </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  <tr>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      #PER-7832
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                      ABC1234
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      2 horas
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      R$ 5,00
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Ativa
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      #PER-7831
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                      DEF5678
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      1 hora
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      R$ 3,00
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                        Ativa
-                      </span>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      #PER-7830
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
-                      GHI9012
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      3 horas
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      R$ 7,00
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap">
-                      <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                        Expirada
-                      </span>
-                    </td>
-                  </tr>
+                  {latestPermits?.map((permissao: Permissao) => (
+                    <tr key={permissao.id}>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        #{permissao.id.slice(-4)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm font-medium">
+                        {permissao.placa}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        {permissao.duracaoHoras} horas
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        {formatMoney(permissao.valor)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
+                        {formatDateTime(permissao.dataFim)}
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        {getStatusBadge(permissao.status)}
+                      </td>
+                    </tr>
+                  ))}
                 </tbody>
               </table>
-            </div>
-          </Card>
-
-          <Card>
-            <CardHeader className="p-4 border-b border-gray-200 bg-blue-100">
-              <CardTitle className="text-lg">Desempenho dos Fiscais</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {adminStats?.fiscalPerformance?.map((fiscal: any) => (
-                  <div
-                    key={fiscal.fiscalId}
-                    className="p-3 border border-gray-200 rounded-lg"
-                  >
-                    <div className="flex justify-between items-center mb-2">
-                      <div className="font-medium">{fiscal.fiscalName}</div>
-                      <div className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                        {fiscal.verifications} verificações hoje
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="flex-grow bg-gray-200 rounded-full h-2">
-                        <div
-                          className="bg-primary h-2 rounded-full"
-                          style={{ width: `${fiscal.performance}%` }}
-                        ></div>
-                      </div>
-                      <span className="text-xs font-medium">
-                        {fiscal.performance}%
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-            <div className="p-4 border-t border-gray-200">
-              <Button
-                variant="ghost"
-                className="w-full py-2 text-primary hover:bg-blue-50"
-              >
-                Relatório Completo
-              </Button>
             </div>
           </Card>
         </div>
