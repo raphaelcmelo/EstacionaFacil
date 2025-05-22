@@ -137,6 +137,12 @@ export default function Header() {
                       >
                         Painel Administrativo
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="cursor-pointer"
+                        onClick={() => navigate("/admin/prices")}
+                      >
+                        Tabela de Preços
+                      </DropdownMenuItem>
                     </>
                   )}
 

@@ -345,10 +345,12 @@ export default function AdminPrices() {
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gerenciar Preços</h2>
-        <Button onClick={handleAddPriceConfig} variant="secondary">
-          <i className="material-icons mr-2">add</i>
-          Nova Configuração de Preço
-        </Button>
+        {!priceConfigs?.current && (
+          <Button onClick={handleAddPriceConfig} variant="secondary">
+            <i className="material-icons mr-2">add</i>
+            Nova Configuração de Preço
+          </Button>
+        )}
       </div>
 
       <div className="grid grid-cols-1 gap-6">
@@ -374,12 +376,11 @@ export default function AdminPrices() {
                   </div>
                   <div className="flex space-x-2">
                     <Button
-                      variant="outline"
+                      variant="default"
                       size="sm"
                       onClick={() =>
                         handleEditPriceConfig(priceConfigs.current)
                       }
-                      className="text-primary"
                     >
                       <i className="material-icons text-sm mr-1">edit</i>
                       Editar

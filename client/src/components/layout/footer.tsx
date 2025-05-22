@@ -106,11 +106,17 @@ export default function Footer() {
             &copy; 2025 Prefeitura Municipal. Todos os direitos reservados.
           </p>
           <div className="flex space-x-4 mt-4 md:mt-0">
-            <a href="#" className="text-gray-400 hover:text-white">
-              <i className="material-icons">facebook</i>
+            <a
+              href="https://instagram.com/prefeituradeanapolis"
+              className="text-gray-400 hover:text-white"
+            >
+              <i className="material-icons">photo_camera</i>
             </a>
-            <a href="#" className="text-gray-400 hover:text-white">
-              <i className="material-icons">whatsapp</i>
+            <a
+              href="https://www.tiktok.com/@prefeituradeanapolis"
+              className="text-gray-400 hover:text-white"
+            >
+              <i className="material-icons">tiktok</i>
             </a>
             <a href="#" className="text-gray-400 hover:text-white">
               <i className="material-icons">email</i>
