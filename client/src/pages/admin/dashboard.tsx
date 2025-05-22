@@ -16,6 +16,15 @@ import {
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { PaymentStatus, PaymentMethod } from "@shared/schema";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 
 interface Permissao {
   id: string;
@@ -63,7 +72,20 @@ export default function AdminDashboard() {
     enabled: !!user && (user.role === "MANAGER" || user.role === "ADMIN"),
   });
 
-  if (isLoadingStats || isLoadingPermits) {
+  // Get permits by hour
+  const { data: permissoesPorHorario, isLoading: isLoadingHorario } = useQuery({
+    queryKey: ["/v1/estaciona-facil/admin/permissoes/horario"],
+    queryFn: async () => {
+      const response = await apiRequest(
+        "GET",
+        "/v1/estaciona-facil/admin/permissoes/horario"
+      );
+      return response;
+    },
+    enabled: !!user && (user.role === "MANAGER" || user.role === "ADMIN"),
+  });
+
+  if (isLoadingStats || isLoadingPermits || isLoadingHorario) {
     return <LoadingSpinner />;
   }
 
@@ -183,12 +205,35 @@ export default function AdminDashboard() {
               </Select>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="h-64 flex items-center justify-center">
-                {/* Placeholder for chart - in a real app, use a chart library like recharts */}
-                <div className="text-center text-gray-500">
-                  <i className="material-icons text-5xl mb-2">bar_chart</i>
-                  <p>Gráfico de receita diária</p>
-                </div>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={permissoesPorHorario}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis
+                      dataKey="hora"
+                      label={{
+                        value: "Horário",
+                        position: "insideBottom",
+                        offset: -5,
+                      }}
+                    />
+                    <YAxis
+                      label={{
+                        value: "Quantidade de Permissões",
+                        angle: -90,
+                        position: "insideLeft",
+                      }}
+                    />
+                    <Tooltip
+                      formatter={(value) => [
+                        `${value} permissões`,
+                        "Quantidade",
+                      ]}
+                      labelFormatter={(label) => `Horário: ${label}`}
+                    />
+                    <Bar dataKey="quantidade" fill="#3b82f6" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
             </CardContent>
           </Card>
