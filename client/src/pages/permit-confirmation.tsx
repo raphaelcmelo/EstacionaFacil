@@ -33,7 +33,6 @@ export default function PermitConfirmation() {
       model: confirmationData.vehicle.model,
       startTime: confirmationData.startTime,
       endTime: confirmationData.endTime,
-      zone: confirmationData.zone.name,
       amount: confirmationData.amount,
       durationHours: confirmationData.durationHours,
     };
@@ -168,12 +167,6 @@ export default function PermitConfirmation() {
               <span className="font-semibold">
                 {formatDateTime(confirmationData.startTime)} até{" "}
                 {formatDateTime(confirmationData.endTime)}
-              </span>
-            </div>
-            <div className="flex justify-between mb-2">
-              <span className="text-gray-600">Zona:</span>
-              <span className="font-semibold">
-                {confirmationData.zone.name}
               </span>
             </div>
             <div className="flex justify-between text-lg border-t border-gray-300 pt-2 mt-2">

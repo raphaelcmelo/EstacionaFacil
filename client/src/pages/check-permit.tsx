@@ -9,14 +9,22 @@ import { Helmet } from "react-helmet";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { apiRequest } from "@/lib/queryClient";
 import { formatDateTime, formatTimeRemaining } from "@/lib/utils";
 import { useEffect } from "react";
 
 // Form schema
 const checkPermitSchema = z.object({
-  licensePlate: z.string()
+  licensePlate: z
+    .string()
     .min(7, "Placa deve ter no mínimo 7 caracteres")
     .max(8, "Placa deve ter no máximo 8 caracteres"),
 });
@@ -30,38 +38,38 @@ export default function CheckPermit() {
   const [permitData, setPermitData] = useState<any>(null);
   const [permitFound, setPermitFound] = useState(false);
   const [timeRemaining, setTimeRemaining] = useState("");
-  
+
   const form = useForm<CheckPermitFormData>({
     resolver: zodResolver(checkPermitSchema),
     defaultValues: {
       licensePlate: "",
     },
   });
-  
+
   // Update time remaining every second
   useEffect(() => {
     if (!permitData) return;
-    
+
     const updateTimeRemaining = () => {
       setTimeRemaining(formatTimeRemaining(permitData.permit.endTime));
     };
-    
+
     updateTimeRemaining();
     const intervalId = setInterval(updateTimeRemaining, 1000);
-    
+
     return () => clearInterval(intervalId);
   }, [permitData]);
-  
+
   const onSubmit = async (data: CheckPermitFormData) => {
     try {
       setIsLoading(true);
       setError(null);
       setPermitData(null);
       setPermitFound(false);
-      
+
       const response = await apiRequest("POST", "/api/permits/check", data);
       const result = await response.json();
-      
+
       if (result.found) {
         setPermitData(result);
         setPermitFound(true);
@@ -74,14 +82,17 @@ export default function CheckPermit() {
       setIsLoading(false);
     }
   };
-  
+
   return (
     <>
       <Helmet>
         <title>Consultar Tempo - EstacionaFácil</title>
-        <meta name="description" content="Verifique o tempo restante da sua permissão de estacionamento." />
+        <meta
+          name="description"
+          content="Verifique o tempo restante da sua permissão de estacionamento."
+        />
       </Helmet>
-      
+
       <Card className="max-w-md mx-auto">
         <CardHeader className="p-6 flex justify-between items-center">
           <CardTitle className="text-xl">Consultar Tempo Restante</CardTitle>
@@ -89,7 +100,7 @@ export default function CheckPermit() {
             <i className="material-icons">close</i>
           </Button>
         </CardHeader>
-        
+
         <CardContent className="p-6">
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="mb-6">
@@ -107,18 +118,20 @@ export default function CheckPermit() {
                       />
                     </FormControl>
                     <FormMessage />
-                    <p className="text-xs text-gray-500 mt-1">Formato: ABC1234 ou ABC1D23</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Formato: ABC1234 ou ABC1D23
+                    </p>
                   </FormItem>
                 )}
               />
-              
+
               {error && (
                 <Alert variant="destructive" className="mb-4">
                   <AlertCircle className="h-4 w-4" />
                   <AlertDescription>{error}</AlertDescription>
                 </Alert>
               )}
-              
+
               <div className="flex justify-end">
                 <Button
                   type="submit"
@@ -129,54 +142,70 @@ export default function CheckPermit() {
                 </Button>
               </div>
             </form>
-            
+
             {permitData && permitFound && (
               <div className="py-4">
                 <div className="bg-green-100 p-4 rounded-lg mb-4 text-center">
-                  <i className="material-icons text-green-600 text-3xl mb-2">check_circle</i>
-                  <h3 className="font-semibold text-lg mb-1">Permissão Ativa</h3>
+                  <i className="material-icons text-green-600 text-3xl mb-2">
+                    check_circle
+                  </i>
+                  <h3 className="font-semibold text-lg mb-1">
+                    Permissão Ativa
+                  </h3>
                   <div className="flex justify-center items-center">
-                    <span className="font-semibold text-2xl">{timeRemaining}</span>
+                    <span className="font-semibold text-2xl">
+                      {timeRemaining}
+                    </span>
                     <span className="text-gray-600 ml-2">restantes</span>
                   </div>
                 </div>
-                
+
                 <div className="bg-gray-50 p-4 rounded-lg mb-4">
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">Placa:</span>
-                    <span className="font-semibold">{permitData.permit.vehicle.licensePlate}</span>
+                    <span className="font-semibold">
+                      {permitData.permit.vehicle.licensePlate}
+                    </span>
                   </div>
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">Início:</span>
-                    <span className="font-semibold">{formatDateTime(permitData.permit.startTime)}</span>
+                    <span className="font-semibold">
+                      {formatDateTime(permitData.permit.startTime)}
+                    </span>
                   </div>
                   <div className="flex justify-between mb-2">
                     <span className="text-gray-600">Término:</span>
-                    <span className="font-semibold">{formatDateTime(permitData.permit.endTime)}</span>
-                  </div>
-                  <div className="flex justify-between mb-2">
-                    <span className="text-gray-600">Zona:</span>
-                    <span className="font-semibold">{permitData.permit.zone.name}</span>
+                    <span className="font-semibold">
+                      {formatDateTime(permitData.permit.endTime)}
+                    </span>
                   </div>
                 </div>
-                
+
                 <div className="flex justify-center">
                   <Link href="/quick-buy">
-                    <Button className="bg-secondary hover:bg-secondary-light text-white">Estender Tempo</Button>
+                    <Button className="bg-secondary hover:bg-secondary-light text-white">
+                      Estender Tempo
+                    </Button>
                   </Link>
                 </div>
               </div>
             )}
-            
+
             {!permitFound && form.formState.isSubmitSuccessful && (
               <div className="py-4 text-center">
                 <div className="w-16 h-16 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
                   <i className="material-icons text-red-600 text-3xl">error</i>
                 </div>
-                <h3 className="font-semibold text-lg mb-2">Nenhuma permissão encontrada</h3>
-                <p className="text-gray-600 mb-4">Não há permissão ativa para a placa informada.</p>
+                <h3 className="font-semibold text-lg mb-2">
+                  Nenhuma permissão encontrada
+                </h3>
+                <p className="text-gray-600 mb-4">
+                  Não há permissão ativa para a placa informada.
+                </p>
                 <Link href="/quick-buy">
-                  <Button className="bg-secondary hover:bg-secondary-light text-white">Comprar Permissão</Button>
+                  <Button className="bg-secondary hover:bg-secondary-light text-white">
+                    Comprar Permissão
+                  </Button>
                 </Link>
               </div>
             )}

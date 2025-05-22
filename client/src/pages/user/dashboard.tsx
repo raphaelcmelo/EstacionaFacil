@@ -170,9 +170,6 @@ export default function UserDashboard() {
                         {permit.vehicle.licensePlate} • {permit.vehicle.model}
                       </span>
                     </div>
-                    <div className="text-gray-600 text-sm mt-1">
-                      {permit.zone.name}
-                    </div>
                   </div>
                   <div className="bg-green-100 px-3 py-1 rounded-full text-green-800 text-sm font-medium flex items-center self-start md:self-center">
                     <i className="material-icons text-xs mr-1">check_circle</i>

@@ -367,12 +367,6 @@ export default function FiscalVerify() {
                         {timeRemaining}
                       </div>
                     </div>
-                    <div>
-                      <div className="text-sm text-gray-600">Zona:</div>
-                      <div className="font-semibold">
-                        {verificationResult.permit.zone.name}
-                      </div>
-                    </div>
                   </div>
                 </div>
 

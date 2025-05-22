@@ -123,7 +123,7 @@ export default function AdminDashboard() {
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-3">
             <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
               <CardTitle className="text-lg">Receita Diária</CardTitle>
               <Select defaultValue={timeRange} onValueChange={setTimeRange}>
@@ -147,43 +147,10 @@ export default function AdminDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader className="p-4 border-b border-gray-200">
-              <CardTitle className="text-lg">Ocupação por Zona</CardTitle>
-            </CardHeader>
-            <CardContent className="p-4">
-              <div className="space-y-4">
-                {adminStats?.zoneOccupancy?.map((zone: any) => (
-                  <div key={zone.zoneId}>
-                    <div className="flex justify-between mb-1">
-                      <span className="text-sm font-medium">
-                        {zone.zoneName}
-                      </span>
-                      <span className="text-sm text-gray-600">
-                        {zone.occupancyRate}%
-                      </span>
-                    </div>
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div
-                        className={`${
-                          zone.occupancyRate > 80
-                            ? "bg-red-500"
-                            : zone.occupancyRate > 60
-                            ? "bg-primary"
-                            : "bg-green-500"
-                        } h-2 rounded-full`}
-                        style={{ width: `${zone.occupancyRate}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <Card className="lg:col-span-2">
+          <Card className="lg:col-span-3">
             <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
               <CardTitle className="text-lg">Últimas Permissões</CardTitle>
               <Button
@@ -208,9 +175,6 @@ export default function AdminDashboard() {
                       Duração
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Zona
-                    </th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Valor
                     </th>
                     <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -228,9 +192,6 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       2 horas
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      Centro
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       R$ 5,00
@@ -252,9 +213,6 @@ export default function AdminDashboard() {
                       1 hora
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      Orla
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       R$ 3,00
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -272,9 +230,6 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       3 horas
-                    </td>
-                    <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
-                      Comercial
                     </td>
                     <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-700">
                       R$ 7,00
