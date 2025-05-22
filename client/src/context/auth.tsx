@@ -7,6 +7,7 @@ import React, {
   ReactNode,
 } from "react";
 import { User } from "@shared/schema";
+import { queryClient } from "@/lib/queryClient";
 const baseUrl = import.meta.env.VITE_API_BASE_URL;
 // Gere um ID único para esta instância do módulo para depuração
 const AUTH_MODULE_INSTANCE_ID = Math.random();
@@ -92,6 +93,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(userData.user);
       localStorage.setItem("accessToken", userData.tokens.access.token);
       localStorage.setItem("refreshToken", userData.tokens.refresh.token);
+      // Limpar o cache do React Query ao fazer login
+      queryClient.clear();
       return userData;
     } finally {
       setIsLoading(false);
@@ -129,6 +132,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(null);
       localStorage.removeItem("accessToken");
       localStorage.removeItem("refreshToken");
+      // Limpar o cache do React Query ao fazer logout
+      queryClient.clear();
     } finally {
       setIsLoading(false);
     }
