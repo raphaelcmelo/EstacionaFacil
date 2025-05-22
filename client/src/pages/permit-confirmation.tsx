@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Helmet } from "react-helmet";
 import { useQuery } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
@@ -134,6 +134,9 @@ export default function PermitConfirmation() {
       </Helmet>
 
       <Card className="max-w-md mx-auto">
+        <CardHeader className="p-6 bg-blue-100">
+          <CardTitle className="text-xl">Confirmação de Permissão</CardTitle>
+        </CardHeader>
         <CardContent className="p-6">
           <div className="text-center mb-6">
             <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-4">

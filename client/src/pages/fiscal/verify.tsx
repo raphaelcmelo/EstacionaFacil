@@ -249,7 +249,7 @@ export default function FiscalVerify() {
       </div>
 
       <Card className="overflow-hidden">
-        <CardHeader className="p-6">
+        <CardHeader className="p-6 bg-blue-100">
           <CardTitle className="text-lg">Verificar Veículo</CardTitle>
         </CardHeader>
         <CardContent className="p-6">
@@ -421,9 +421,6 @@ export default function FiscalVerify() {
                                 value={InfringementType.EXPIRED_PERMIT}
                               >
                                 Permissão Expirada
-                              </SelectItem>
-                              <SelectItem value={InfringementType.INVALID_ZONE}>
-                                Zona Inválida
                               </SelectItem>
                             </SelectContent>
                           </Select>

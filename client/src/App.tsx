@@ -21,7 +21,6 @@ import FiscalDashboard from "@/pages/fiscal/dashboard";
 import FiscalVerify from "@/pages/fiscal/verify";
 import AdminDashboard from "@/pages/admin/dashboard";
 import AdminUsers from "@/pages/admin/users";
-import AdminZones from "@/pages/admin/zones";
 import AdminPrices from "@/pages/admin/prices";
 import { useAuth } from "@/context/auth";
 import { Suspense, lazy } from "react";
@@ -120,14 +119,6 @@ function Router() {
         </Route>
         <Route path="/admin/users">
           {() => <ProtectedRoute component={AdminUsers} roles={["ADMIN"]} />}
-        </Route>
-        <Route path="/admin/zones">
-          {() => (
-            <ProtectedRoute
-              component={AdminZones}
-              roles={["MANAGER", "ADMIN"]}
-            />
-          )}
         </Route>
         <Route path="/admin/prices">
           {() => (

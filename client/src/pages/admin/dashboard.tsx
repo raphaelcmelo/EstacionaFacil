@@ -124,7 +124,7 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
           <Card className="lg:col-span-3">
-            <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
+            <CardHeader className="p-4 border-b border-gray-200 bg-blue-100 flex justify-between items-center">
               <CardTitle className="text-lg">Receita Diária</CardTitle>
               <Select defaultValue={timeRange} onValueChange={setTimeRange}>
                 <SelectTrigger className="w-[150px]">
@@ -151,7 +151,7 @@ export default function AdminDashboard() {
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <Card className="lg:col-span-3">
-            <CardHeader className="p-4 border-b border-gray-200 flex justify-between items-center">
+            <CardHeader className="p-4 border-b border-gray-200 bg-blue-100 flex justify-between items-center">
               <CardTitle className="text-lg">Últimas Permissões</CardTitle>
               <Button
                 variant="outline"
@@ -246,7 +246,7 @@ export default function AdminDashboard() {
           </Card>
 
           <Card>
-            <CardHeader className="p-4 border-b border-gray-200">
+            <CardHeader className="p-4 border-b border-gray-200 bg-blue-100">
               <CardTitle className="text-lg">Desempenho dos Fiscais</CardTitle>
             </CardHeader>
             <CardContent className="p-4">

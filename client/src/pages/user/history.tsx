@@ -54,7 +54,7 @@ export default function UserHistory() {
       </div>
 
       <Card>
-        <CardHeader className="p-4 border-b border-gray-200 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <CardHeader className="p-4 border-b border-gray-200 bg-blue-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <CardTitle className="text-lg">Suas Permissões</CardTitle>
           <div className="flex items-center space-x-2">
             <div className="flex items-center space-x-2">

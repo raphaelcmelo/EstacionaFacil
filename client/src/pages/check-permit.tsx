@@ -94,7 +94,7 @@ export default function CheckPermit() {
       </Helmet>
 
       <Card className="max-w-md mx-auto">
-        <CardHeader className="p-6 flex justify-between items-center">
+        <CardHeader className="p-6 flex justify-between items-center bg-blue-100">
           <CardTitle className="text-xl">Consultar Tempo Restante</CardTitle>
           <Button variant="ghost" size="icon" onClick={() => navigate("/")}>
             <i className="material-icons">close</i>
