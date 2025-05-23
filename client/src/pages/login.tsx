@@ -3,7 +3,6 @@ import { Link, useLocation } from "wouter";
 import { useAuth } from "@/context/auth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -27,6 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cpf as cpfValidator } from "cpf-cnpj-validator";
+import InputMask from "react-input-mask";
 
 const formSchema = z.object({
   cpf: z
@@ -59,7 +59,8 @@ export default function Login() {
     try {
       setError(null);
       setIsLoading(true);
-      await login(data.cpf, data.password);
+      const unmaskedCpf = data.cpf.replace(/\D/g, ""); // Remove caracteres não numéricos
+      await login(unmaskedCpf, data.password);
       navigate("/dashboard");
     } catch (err: any) {
       setError(
@@ -110,7 +111,25 @@ export default function Login() {
                     <FormItem>
                       <FormLabel>CPF</FormLabel>
                       <FormControl>
-                        <Input placeholder="Insira seu CPF" {...field} />
+                        <InputMask
+                          mask="999.999.999-99"
+                          value={field.value}
+                          onChange={field.onChange}
+                          onBlur={field.onBlur}
+                          name={field.name}
+                          // maskChar={null} // Opcional: para não exibir '_' nos espaços vazios
+                        >
+                          {(
+                            inputProps: any // As props do InputMask são passadas para o Input do shadcn/ui
+                          ) => (
+                            <Input
+                              {...inputProps}
+                              ref={field.ref} // Importante para react-hook-form
+                              placeholder="Insira seu CPF"
+                              type="text" // react-input-mask pode definir type="tel" por padrão
+                            />
+                          )}
+                        </InputMask>
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -137,7 +156,8 @@ export default function Login() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-primary hover:bg-primary-light"
+                  variant="default"
+                  className="w-full"
                   disabled={isLoading}
                 >
                   {isLoading ? "Entrando..." : "Entrar"}
