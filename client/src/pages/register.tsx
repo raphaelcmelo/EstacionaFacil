@@ -75,7 +75,6 @@ export default function Register() {
     try {
       setError(null);
       setIsLoading(true);
-      // Prepara os dados para submissão, removendo máscaras
       const submissionData = {
         ...data,
         cpf: data.cpf.replace(/\D/g, ""),
@@ -137,7 +136,6 @@ export default function Register() {
                             onChange={field.onChange}
                             onBlur={field.onBlur}
                             name={field.name}
-                            // maskChar={null} // Opcional
                           >
                             {(inputProps: any) => (
                               <Input
@@ -163,20 +161,20 @@ export default function Register() {
                         <FormControl>
                           <Input
                             placeholder="(99) 99999-9999"
-                            // Passamos as props do field, mas sobrescrevemos value e onChange
+                            type="tel"
                             name={field.name}
                             onBlur={field.onBlur}
                             ref={field.ref}
-                            value={maskPhoneNumber(field.value || "")} // Exibe o valor mascarado
+                            value={maskPhoneNumber(field.value || "")}
                             onChange={(e) => {
                               const numericValue = e.target.value.replace(
                                 /\D/g,
                                 ""
                               );
-                              // Atualiza o react-hook-form com apenas os dígitos, limitado a 11
+
                               field.onChange(numericValue.slice(0, 11));
                             }}
-                            maxLength={15} // Acomoda a máscara (XX) X XXXX-XXXX
+                            maxLength={15}
                           />
                         </FormControl>
                         <FormMessage />

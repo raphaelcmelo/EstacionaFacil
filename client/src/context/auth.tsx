@@ -112,8 +112,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       });
       if (!res.ok) throw new Error("Falha no registro");
       const newUserData = await res.json();
-      setUser(newUserData);
-      return newUserData;
+      setUser(newUserData.user); 
+      localStorage.setItem("accessToken", newUserData.tokens.access.token); 
+      localStorage.setItem("refreshToken", newUserData.tokens.refresh.token); 
+      queryClient.clear(); 
+      return newUserData.user; 
     } finally {
       setIsLoading(false);
     }

@@ -87,3 +87,16 @@ export type RegisterData = z.infer<typeof registerSchema>;
 export type LoginData = z.infer<typeof loginSchema>;
 export type QuickBuyData = z.infer<typeof quickBuySchema>;
 export type CheckPermitData = z.infer<typeof checkPermitSchema>;
+
+// Definição do Schema para o Usuário
+export const UserSchema = z.object({
+  id: z.string(), // Ou z.number(), dependendo do backend. Assumindo string.
+  name: z.string(),
+  email: z.string().email("E-mail inválido"),
+  cpf: z.string().optional(),
+  phone: z.string().optional(),
+  role: z.nativeEnum(UserRole), // Utiliza o enum UserRole já definido
+  // Outros campos como createdAt, updatedAt podem ser adicionados se aplicável
+});
+
+export type User = z.infer<typeof UserSchema>;
