@@ -27,6 +27,7 @@ import {
 } from "@/components/ui/form";
 import { cpf as cpfValidator } from "cpf-cnpj-validator";
 import InputMask from "react-input-mask";
+import { maskPhoneNumber } from "@/lib/utils";
 
 const formSchema = z
   .object({
@@ -39,13 +40,9 @@ const formSchema = z
         message: "CPF inválido",
       }),
     phone: z.string().refine((value) => {
-      // value será a string mascarada
-      const digits = value.replace(/\D/g, "");
-      // Permite campo vazio (opcional) ou com 10/11 dígitos
-      return (
-        digits.length === 0 || digits.length === 10 || digits.length === 11
-      );
-    }, "Telefone inválido. Se preenchido, deve conter 10 ou 11 dígitos."),
+      const len = value.length;
+      return len === 10 || len === 11;
+    }, "Telefone deve conter 10 ou 11 dígitos."),
     password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
     confirmPassword: z.string(),
   })
@@ -164,23 +161,23 @@ export default function Register() {
                       <FormItem>
                         <FormLabel>WhatsApp</FormLabel>
                         <FormControl>
-                          <InputMask
-                            mask="(99) 9999[9]-9999" // Aceita 10 ou 11 dígitos
-                            value={field.value}
-                            onChange={field.onChange}
-                            onBlur={field.onBlur}
+                          <Input
+                            placeholder="(99) 99999-9999"
+                            // Passamos as props do field, mas sobrescrevemos value e onChange
                             name={field.name}
-                            // maskChar={null} // Opcional
-                          >
-                            {(inputProps: any) => (
-                              <Input
-                                {...inputProps}
-                                ref={field.ref}
-                                placeholder="(99) 99999-9999"
-                                type="text"
-                              />
-                            )}
-                          </InputMask>
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            value={maskPhoneNumber(field.value || "")} // Exibe o valor mascarado
+                            onChange={(e) => {
+                              const numericValue = e.target.value.replace(
+                                /\D/g,
+                                ""
+                              );
+                              // Atualiza o react-hook-form com apenas os dígitos, limitado a 11
+                              field.onChange(numericValue.slice(0, 11));
+                            }}
+                            maxLength={15} // Acomoda a máscara (XX) X XXXX-XXXX
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

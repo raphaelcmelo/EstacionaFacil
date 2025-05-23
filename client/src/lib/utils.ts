@@ -107,22 +107,3 @@ export const maskPhoneNumber = (value: string): string => {
 
   return masked.trimRight();
 };
-
-export const maskCpf = (value: string): string => {
-  let digits = value.replace(/\D/g, "");
-
-  if (digits.length > 11) {
-    digits = digits.substring(0, 11);
-  }
-
-  let masked = "";
-  for (let i = 0; i < digits.length; i++) {
-    masked += digits[i];
-    if (i === 2 || i === 5) {
-      masked += ".";
-    } else if (i === 8) {
-      masked += "-";
-    }
-  }
-  return masked;
-};
