@@ -32,7 +32,7 @@ export default function Home() {
               </p>
               <div className="flex flex-wrap gap-3">
                 <Link href="/purchase">
-                  <Button variant="secondary" className="h-full">
+                  <Button variant="secondary" className="h-auto px-5 py-6">
                     <i className="material-icons mr-2">add_circle</i>
                     Comprar Agora
                   </Button>

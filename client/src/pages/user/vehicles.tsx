@@ -98,13 +98,10 @@ export default function UserVehicles() {
         "GET",
         `${baseUrl}/v1/estaciona-facil/veiculo/listar`
       );
-      console.log("Dados dos veículos:", response); // Para debug
       return response;
     },
     enabled: !!user,
   });
-
-  console.log("Veículos após processamento:", vehicles); // Para debug
 
   // Forms
   const addForm = useForm<VehicleFormData>({

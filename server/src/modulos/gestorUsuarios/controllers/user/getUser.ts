@@ -14,3 +14,10 @@ export const getUser = catchAsync(
     res.status(status.OK).send(user);
   }
 );
+
+export const getAllUsers = catchAsync(
+  async (req: Request, res: Response): Promise<void> => {
+    const users = await userRepository.findAll();
+    res.status(status.OK).send(users);
+  }
+);

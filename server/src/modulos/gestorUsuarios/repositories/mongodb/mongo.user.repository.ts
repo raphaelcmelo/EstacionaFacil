@@ -7,6 +7,11 @@ export class MongoUserRepository implements UserRepository {
     return user;
   }
 
+  async findAll(): Promise<User[]> {
+    const users = await UserModel.find();
+    return users;
+  }
+
   async findByCpf(cpf: string): Promise<User | null> {
     const user = await UserModel.findOne({ cpf });
     return user;

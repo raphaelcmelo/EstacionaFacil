@@ -79,10 +79,14 @@ export default function AdminUsers() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
+  const baseUrl = import.meta.env.VITE_API_BASE_URL;
 
   // Get users list
   const { data: users, isLoading } = useQuery({
-    queryKey: ["/api/admin/users"],
+    queryKey: ["/v1/gestor-usuarios/users"],
+    queryFn: async () => {
+      return await apiRequest("GET", `${baseUrl}/v1/gestor-usuarios/users`);
+    },
     enabled: !!user && user.role === "ADMIN",
   });
 

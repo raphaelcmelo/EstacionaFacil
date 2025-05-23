@@ -10,6 +10,7 @@ export type UserInput = {
 
 export interface UserRepository {
   create(user: UserInput): Promise<User>;
+  findAll(): Promise<User[]>;
   findByCpf(cpf: string): Promise<User | null>;
   findByEmail(email: string): Promise<User | null>;
   findById(userId: string): Promise<User | null>;

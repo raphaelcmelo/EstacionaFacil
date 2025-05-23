@@ -3,7 +3,6 @@ import veiculoRoutes from "./veiculo.route";
 import precoRoutes from "./preco.route";
 import permitsRoutes from "./permits.route";
 import adminRoutes from "./admin.route";
-import permissaoRoutes from "./permissao.route";
 
 const estacionaFacilRoutes = Router();
 
@@ -23,10 +22,6 @@ const defaultRoutes = [
   {
     path: "/admin",
     route: adminRoutes,
-  },
-  {
-    path: "/permissao",
-    route: permissaoRoutes,
   },
 ];
 

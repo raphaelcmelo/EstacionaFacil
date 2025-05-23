@@ -29,12 +29,12 @@ export async function apiRequest(
     ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
   };
 
-  console.log("API Request:", {
-    method,
-    url,
-    data,
-    headers,
-  });
+  // console.log("API Request:", {
+  //   method,
+  //   url,
+  //   data,
+  //   headers,
+  // });
 
   const res = await fetch(url, {
     method,

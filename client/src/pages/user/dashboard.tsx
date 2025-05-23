@@ -37,12 +37,20 @@ export default function UserDashboard() {
   const [location, setLocation] = useLocation();
 
   // Get active parking permits
-  const { data: activePermits = [], isLoading: isLoadingPermits } = useQuery<
-    Permit[]
-  >({
-    queryKey: ["/api/permits/active"],
-    enabled: !!user,
-  });
+  // const { data: activePermits = [], isLoading: isLoadingPermits } = useQuery<
+  //   Permit[]
+  // >({
+  //   queryKey: ["activePermits"], // Chave mais semântica
+  //   queryFn: async () => {
+  //     // Substitua 'v1/estaciona-facil/permissoes/ativas' pelo seu endpoint real
+  //     const response = await apiRequest(
+  //       "GET",
+  //       `${baseUrl}/v1/estaciona-facil/permits/ativas`
+  //     );
+  //     return response;
+  //   },
+  //   enabled: !!user,
+  // });
 
   // Get user vehicles
   const { data: vehicles = [], isLoading: isLoadingVehicles } = useQuery<
@@ -60,12 +68,22 @@ export default function UserDashboard() {
   });
 
   // Get permit history for the stats
-  const { data: permitHistory = [], isLoading: isLoadingHistory } = useQuery<
-    Permit[]
-  >({
-    queryKey: ["/api/permits/history", { limit: 10, offset: 0 }],
-    enabled: !!user,
-  });
+  // const { data: permitHistory = [], isLoading: isLoadingHistory } = useQuery<
+  //   Permit[]
+  // >({
+  //   queryKey: ["permitHistory", { limit: 10, offset: 0 }], // Chave mais semântica
+  //   queryFn: async ({ queryKey }) => {
+  //     const [, params] = queryKey;
+  //     const { limit, offset } = params as { limit: number; offset: number };
+  //     // Substitua 'v1/estaciona-facil/permissoes/historico' pelo seu endpoint real
+  //     const url = new URL(`${baseUrl}/v1/estaciona-facil/permissoes/historico`);
+  //     url.searchParams.append("limit", String(limit));
+  //     url.searchParams.append("offset", String(offset));
+  //     const response = await apiRequest("GET", url.toString());
+  //     return response;
+  //   },
+  //   enabled: !!user,
+  // });
 
   // State for time remaining counters
   const [timeRemaining, setTimeRemaining] = useState<{ [key: number]: string }>(
@@ -73,32 +91,35 @@ export default function UserDashboard() {
   );
 
   // Update time remaining every second
-  useEffect(() => {
-    if (!activePermits || activePermits.length === 0) return;
+  // useEffect(() => {
+  //   if (!activePermits || activePermits.length === 0) return;
 
-    const updateTimeRemaining = () => {
-      const newTimeRemaining: { [key: number]: string } = {};
+  //   const updateTimeRemaining = () => {
+  //     const newTimeRemaining: { [key: number]: string } = {};
 
-      activePermits.forEach((permit) => {
-        newTimeRemaining[permit.id] = formatTimeRemaining(permit.endTime);
-      });
+  //     activePermits.forEach((permit) => {
+  //       newTimeRemaining[permit.id] = formatTimeRemaining(permit.endTime);
+  //     });
 
-      setTimeRemaining(newTimeRemaining);
-    };
+  //     setTimeRemaining(newTimeRemaining);
+  //   };
 
-    updateTimeRemaining();
-    const intervalId = setInterval(updateTimeRemaining, 1000);
+  //   updateTimeRemaining();
+  //   const intervalId = setInterval(updateTimeRemaining, 1000);
 
-    return () => clearInterval(intervalId);
-  }, [activePermits?.length]);
+  //   return () => clearInterval(intervalId);
+  // }, [activePermits?.length]);
 
   // Calculate stats
-  const purchasesThisMonth = permitHistory?.length || 0;
+  // const purchasesThisMonth = permitHistory?.length || 0;
+  const purchasesThisMonth = 0;
 
   // Calculate savings (mock calculation - in reality would depend on business rules)
-  const savingsThisMonth = purchasesThisMonth > 3 ? 8.5 : 0;
+  // const savingsThisMonth = purchasesThisMonth > 3 ? 8.5 : 0;
+  const savingsThisMonth = 0;
 
-  if (isLoadingPermits || isLoadingVehicles || isLoadingHistory) {
+  // if (isLoadingPermits || isLoadingVehicles || isLoadingHistory) {
+  if (isLoadingVehicles) {
     return <LoadingSpinner />;
   }
 
@@ -116,7 +137,7 @@ export default function UserDashboard() {
         <h2 className="text-2xl font-bold mb-4">
           Olá, {user?.name?.split(" ")[0]}!
         </h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <Card>
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-2">
@@ -125,9 +146,7 @@ export default function UserDashboard() {
                   <i className="material-icons text-green-600">timer</i>
                 </div>
               </div>
-              <p className="text-2xl font-semibold">
-                {activePermits?.length || 0}
-              </p>
+              <p className="text-2xl font-semibold">0</p>
             </CardContent>
           </Card>
           <Card>
@@ -152,7 +171,7 @@ export default function UserDashboard() {
               <p className="text-2xl font-semibold">{purchasesThisMonth}</p>
             </CardContent>
           </Card>
-          <Card>
+          {/* <Card>
             <CardContent className="p-4">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-gray-600">Economia no Mês</span>
@@ -164,7 +183,7 @@ export default function UserDashboard() {
                 {formatMoney(savingsThisMonth)}
               </p>
             </CardContent>
-          </Card>
+          </Card> */}
         </div>
       </div>
 
@@ -172,7 +191,7 @@ export default function UserDashboard() {
         <CardHeader className="p-4 border-b border-gray-200 bg-blue-100">
           <CardTitle className="text-lg">Permissões Ativas</CardTitle>
         </CardHeader>
-        <CardContent className="p-4">
+        {/* <CardContent className="p-4">
           {activePermits?.length > 0 ? (
             activePermits.map((permit) => (
               <div key={permit.id} className="bg-gray-50 rounded-lg p-4 mb-4">
@@ -234,7 +253,7 @@ export default function UserDashboard() {
               </Link>
             </div>
           )}
-        </CardContent>
+        </CardContent> */}
       </Card>
 
       <Card className="mb-6">
@@ -347,7 +366,7 @@ export default function UserDashboard() {
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {permitHistory?.length > 0 ? (
+              {/* {permitHistory?.length > 0 ? (
                 permitHistory.map((history) => (
                   <tr key={history.id}>
                     <td className="px-4 py-3 whitespace-nowrap">
@@ -390,7 +409,7 @@ export default function UserDashboard() {
                     Nenhuma permissão encontrada no histórico.
                   </td>
                 </tr>
-              )}
+              )} */}
             </tbody>
           </table>
         </div>
