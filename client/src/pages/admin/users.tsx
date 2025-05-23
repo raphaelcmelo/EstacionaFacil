@@ -21,6 +21,12 @@ import {
 } from "@/components/ui/form";
 import { Badge } from "@/components/ui/badge";
 import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -65,7 +71,6 @@ const userFormSchema = z.object({
   fiscalCode: z.string().optional(),
   managerDept: z.string().optional(),
   password: z.string().min(1, "Senha é obrigatória").optional(),
-  active: z.boolean().default(true),
 });
 
 type UserFormData = z.infer<typeof userFormSchema>;
@@ -102,7 +107,6 @@ export default function AdminUsers() {
       fiscalCode: "",
       managerDept: "",
       password: "",
-      active: true,
     },
   });
 
@@ -117,7 +121,6 @@ export default function AdminUsers() {
       fiscalCode: "",
       managerDept: "",
       password: "",
-      active: true,
     },
   });
 
@@ -229,7 +232,6 @@ export default function AdminUsers() {
       role: user.role,
       fiscalCode: user.fiscalCode || "",
       managerDept: user.managerDept || "",
-      active: user.active,
     });
     setSelectedUser(user);
     setIsEditDialogOpen(true);
@@ -265,7 +267,11 @@ export default function AdminUsers() {
       Object.keys(data).forEach((key) => {
         const typedKey = key as keyof UserFormData;
         if (data[typedKey] !== selectedUser[typedKey]) {
-          changedData[typedKey] = data[typedKey];
+          if (typedKey === "role") {
+            changedData[typedKey] = data[typedKey] as UserRole;
+          } else {
+            changedData[typedKey] = data[typedKey];
+          }
         }
       });
 
@@ -336,10 +342,7 @@ export default function AdminUsers() {
 
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-2xl font-bold">Gerenciar Usuários</h2>
-        <Button
-          onClick={() => setIsAddDialogOpen(true)}
-          className="bg-secondary hover:bg-secondary-light text-white"
-        >
+        <Button onClick={() => setIsAddDialogOpen(true)} variant="secondary">
           <i className="material-icons mr-2">add</i>
           Adicionar Usuário
         </Button>
@@ -379,12 +382,6 @@ export default function AdminUsers() {
                     Tipo
                   </th>
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Detalhes
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Status
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Ações
                   </th>
                 </tr>
@@ -392,10 +389,7 @@ export default function AdminUsers() {
               <tbody className="bg-white divide-y divide-gray-200">
                 {users?.length > 0 ? (
                   users.map((user: any) => (
-                    <tr
-                      key={user.id}
-                      className={!user.active ? "bg-gray-50" : ""}
-                    >
+                    <tr key={user.id} className="bg-gray-50">
                       <td className="px-4 py-4 whitespace-nowrap">
                         <div className="flex items-center">
                           <div className="flex-shrink-0 h-10 w-10 bg-gray-200 rounded-full flex items-center justify-center">
@@ -422,7 +416,7 @@ export default function AdminUsers() {
                       <td className="px-4 py-4 whitespace-nowrap">
                         {getRoleBadge(user.role)}
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
+                      {/* <td className="px-4 py-4 whitespace-nowrap">
                         {user.role === "FISCAL" && (
                           <div className="text-sm text-gray-900">
                             Código: {user.fiscalCode || "N/A"}
@@ -433,61 +427,73 @@ export default function AdminUsers() {
                             Depto: {user.managerDept || "N/A"}
                           </div>
                         )}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <span
-                          className={`px-2 py-1 text-xs rounded-full flex items-center w-fit ${
-                            user.active
-                              ? "bg-green-100 text-green-800"
-                              : "bg-red-100 text-red-800"
-                          }`}
-                        >
-                          {user.active ? (
-                            <>
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              Ativo
-                            </>
-                          ) : (
-                            <>
-                              <AlertCircle className="h-3 w-3 mr-1" />
-                              Inativo
-                            </>
-                          )}
-                        </span>
-                      </td>
+                      </td> */}
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditUser(user)}
-                            className="text-primary hover:text-primary-dark"
-                          >
-                            <i className="material-icons text-sm">edit</i>
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => toggleUserActive(user)}
-                            className={
-                              user.active
-                                ? "text-amber-600 hover:text-amber-700"
-                                : "text-green-600 hover:text-green-700"
-                            }
-                          >
-                            <i className="material-icons text-sm">
-                              {user.active ? "block" : "check_circle"}
-                            </i>
-                          </Button>
-                          {user.id !== user.id && ( // Don't allow deleting yourself
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleDeleteUser(user)}
-                              className="text-red-600 hover:text-red-700"
-                            >
-                              <i className="material-icons text-sm">delete</i>
-                            </Button>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => handleEditUser(user)}
+                                  className="text-primary hover:text-primary-dark"
+                                >
+                                  <i className="material-icons text-sm">edit</i>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>Editar Usuário</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => toggleUserActive(user)}
+                                  className={
+                                    user.active
+                                      ? "text-amber-600 hover:text-amber-700"
+                                      : "text-green-600 hover:text-green-700"
+                                  }
+                                >
+                                  <i className="material-icons text-sm">
+                                    {user.active ? "block" : "check_circle"}
+                                  </i>
+                                </Button>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>
+                                  {user.active
+                                    ? "Desativar Usuário"
+                                    : "Ativar Usuário"}
+                                </p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                          {user.id !== user.id && ( // Don't allow deleting yourself - This condition seems to always be false, should be current user's ID
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => handleDeleteUser(user)}
+                                    className="text-red-600 hover:text-red-700"
+                                  >
+                                    <i className="material-icons text-sm">
+                                      delete
+                                    </i>
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>Excluir Usuário</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           )}
                         </div>
                       </td>
@@ -666,25 +672,6 @@ export default function AdminUsers() {
                 )}
               />
 
-              <FormField
-                control={addForm.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <input
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={field.onChange}
-                        className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Usuário ativo</FormLabel>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <DialogFooter>
                 <Button
                   type="button"
@@ -856,25 +843,6 @@ export default function AdminUsers() {
                         {...field}
                       />
                     </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={editForm.control}
-                name="active"
-                render={({ field }) => (
-                  <FormItem className="flex items-center space-x-2 space-y-0">
-                    <FormControl>
-                      <input
-                        type="checkbox"
-                        checked={field.value}
-                        onChange={field.onChange}
-                        className="w-4 h-4 text-primary focus:ring-primary border-gray-300 rounded"
-                      />
-                    </FormControl>
-                    <FormLabel className="font-normal">Usuário ativo</FormLabel>
                     <FormMessage />
                   </FormItem>
                 )}

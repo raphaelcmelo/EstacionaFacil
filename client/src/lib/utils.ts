@@ -80,3 +80,49 @@ export function getInitials(name: string): string {
     .toUpperCase()
     .substring(0, 2);
 }
+
+export const maskPhoneNumber = (value: string): string => {
+  let digits = value.replace(/\D/g, ""); // Trabalha apenas com dígitos
+  let len = digits.length;
+
+  if (len > 11) {
+    digits = digits.substring(0, 11);
+    len = 11;
+  }
+
+  if (len === 0) return "";
+  if (len <= 2) return `(${digits}`;
+
+  let masked = `(${digits.substring(0, 2)}) `;
+
+  if (len === 11) {
+    masked += digits.substring(2, 7);
+    masked += `-${digits.substring(7, 11)}`;
+  } else if (len <= 10) {
+    masked += digits.substring(2, Math.min(len, 6));
+    if (len > 6) {
+      masked += `-${digits.substring(6, Math.min(len, 10))}`;
+    }
+  }
+
+  return masked.trimRight();
+};
+
+export const maskCpf = (value: string): string => {
+  let digits = value.replace(/\D/g, "");
+
+  if (digits.length > 11) {
+    digits = digits.substring(0, 11);
+  }
+
+  let masked = "";
+  for (let i = 0; i < digits.length; i++) {
+    masked += digits[i];
+    if (i === 2 || i === 5) {
+      masked += ".";
+    } else if (i === 8) {
+      masked += "-";
+    }
+  }
+  return masked;
+};

@@ -26,6 +26,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { cpf as cpfValidator } from "cpf-cnpj-validator";
+import { maskCpf, maskPhoneNumber } from "@/lib/utils";
 
 const formSchema = z
   .object({
@@ -37,7 +38,10 @@ const formSchema = z
       .refine((value) => !value || cpfValidator.isValid(value), {
         message: "CPF inválido",
       }),
-    phone: z.string().optional(),
+    phone: z.string().refine((value) => {
+      const len = value.length;
+      return len === 10 || len === 11;
+    }, "Telefone deve conter 10 ou 11 dígitos."),
     password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
     confirmPassword: z.string(),
   })
@@ -122,15 +126,19 @@ export default function Register() {
                         <FormControl>
                           <Input
                             placeholder="***.***.***-**"
-                            {...field}
+                            // Passamos as props do field, mas sobrescrevemos value e onChange
+                            name={field.name}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            value={maskCpf(field.value || "")} // Exibe o valor mascarado
                             onChange={(e) => {
                               const numericValue = e.target.value.replace(
                                 /\D/g,
                                 ""
                               );
-                              field.onChange(numericValue);
+                              field.onChange(numericValue.slice(0, 11)); // Atualiza com apenas dígitos, limitado a 11
                             }}
-                            maxLength={11}
+                            maxLength={14} // Acomoda a máscara XXX.XXX.XXX-XX
                             autoComplete="off"
                           />
                         </FormControl>
@@ -144,9 +152,25 @@ export default function Register() {
                     name="phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>WhatsApp (opcional)</FormLabel>
+                        <FormLabel>WhatsApp</FormLabel>
                         <FormControl>
-                          <Input placeholder="(99) 99999-9999" {...field} />
+                          <Input
+                            placeholder="(99) 99999-9999"
+                            // Passamos as props do field, mas sobrescrevemos value e onChange
+                            name={field.name}
+                            onBlur={field.onBlur}
+                            ref={field.ref}
+                            value={maskPhoneNumber(field.value || "")} // Exibe o valor mascarado
+                            onChange={(e) => {
+                              const numericValue = e.target.value.replace(
+                                /\D/g,
+                                ""
+                              );
+                              // Atualiza o react-hook-form com apenas os dígitos, limitado a 11
+                              field.onChange(numericValue.slice(0, 11));
+                            }}
+                            maxLength={15} // Acomoda a máscara (XX) X XXXX-XXXX
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -211,7 +235,8 @@ export default function Register() {
 
                 <Button
                   type="submit"
-                  className="w-full bg-primary hover:bg-primary-light"
+                  variant="default"
+                  className="w-full"
                   disabled={isLoading}
                 >
                   {isLoading ? "Criando conta..." : "Criar conta"}
